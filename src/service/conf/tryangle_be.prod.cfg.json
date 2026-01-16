@@ -1,0 +1,45 @@
+{
+    "environment": "local",
+    "project_name": "tryangle_be",
+    "api_v1_str": "/api/v1",
+    "host": "localhost",
+    "port": 3000,
+    "secret_key": "changethis-secret-key",
+    "access_token_expire_minutes": 1440,
+
+    "http_config": {
+      "allow_origins": ["http://localhost:3000"],
+      "allow_methods": ["*"],
+      "allow_headers": ["*"],
+      "allow_credentials": true
+    },
+    
+    "llm": {
+      "provider": "gemini",
+      "model": "gemini-2.0-flash-lite"
+    },
+    
+    "redis": {
+      "host": "localhost",
+      "port": 6379,
+      "db": 0,
+      "password": null
+    },
+
+    "redis_consumer": {
+      "stream_key": "session:chat:*",
+      "group_name": "web-group",
+      "consumer_name": "web-consumer-1"
+    },
+
+    "logger": {
+        "level": "debug",
+        "path": "./logs/tryangle_be.log-%DATE%",
+        "suffix": "%Y-%m-%d",
+        "max_bytes": 10485760,
+        "max_files": "3d",
+        "rotation": "daily",
+        "use_console": true
+    }  
+}
+  
