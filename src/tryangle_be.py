@@ -14,9 +14,9 @@ import asyncio
 
 from src.app_context import AppContext
 
-from service.basic.basic_api import router as basic_router
-# from service.reference.reference_api import router as reference_router
-from service.files.files_api import (
+from src.service.basic.basic_api import router as basic_router
+# from src.service.reference.reference_api import router as reference_router
+from src.service.files.files_api import (
     router as files_router,
     public_router as files_public_router,
 )

@@ -5,8 +5,8 @@ from fastapi.responses import FileResponse
 import orjson
 
 import src.common.common_codes as codes
-from service.files import files_service
-from service.files.files_schema import FileListResponse
+from src.service.files import files_service
+from src.service.files.files_schema import FileListResponse
 
 router = APIRouter(prefix="/api/files", tags=["Files"])
 public_router = APIRouter(prefix="/files", tags=["Files Public"])

@@ -8,7 +8,7 @@ import uuid
 
 from fastapi import UploadFile
 
-from service.files.files_schema import FileMetadata
+from src.service.files.files_schema import FileMetadata
 
 
 _FILES_DIR = Path("files")
