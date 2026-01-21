@@ -6,11 +6,6 @@
 """
 
 # main.py
-
-import sys
-import os
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
@@ -20,7 +15,7 @@ import asyncio
 from src.app_context import AppContext
 
 from service.basic.basic_api import router as basic_router
-from service.reference.reference_api import router as reference_router
+# from service.reference.reference_api import router as reference_router
 
 class AppFactory:
     """애플리케이션 팩토리 클래스"""
@@ -93,7 +88,7 @@ class AppFactory:
         """라우터 등록"""
         routers = [
             basic_router,
-            reference_router,
+            # reference_router,
         ]
         for router in routers:
             app.include_router(router)
@@ -133,7 +128,10 @@ class AppFactory:
     async def _initialize_handlers(ctx: AppContext) -> None:
         """핸들러 초기화"""    
         ctx.log.info("     - Initializing handlers...")
+        ctx._init_db()
         ctx._init_websocket()
+        
+
         # ctx._init_redis()
         # ctx._init_redis_consumer()
 

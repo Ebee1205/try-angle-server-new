@@ -18,6 +18,7 @@ from src.modules.system_monitor import SystemMonitor
 from src.handler.websocket_handler import WebSocketHandler
 from src.handler.redis_handler import RedisHandler
 from src.handler.redis_stream_consumer import RedisStreamConsumer
+from src.handler.db_handler import DBHandler
 
 class LoggerConfig(BaseModel):
     level: str
@@ -33,7 +34,16 @@ class HTTPConfig(BaseModel):
     allow_methods: list[str]
     allow_headers: list[str]
     allow_credentials: bool
-
+    
+class DBConfig(BaseModel):
+    host: Optional[str]
+    port: Optional[int]
+    user: Optional[str]
+    password: Optional[str] = None
+    database: Optional[str] = None
+    charset: Optional[str] = "utf8mb4"
+    autocommit: Optional[bool] = True
+    
 class RedisConfig(BaseModel):
     host: Optional[str]
     port: Optional[int]
@@ -44,7 +54,8 @@ class RedisConsumerConfig(BaseModel):
     stream_key: Optional[str]
     group_name: Optional[str]
     consumer_name: Optional[str]
-    
+
+
 class LLMConfig(BaseModel):
     provider: str           # "ollama" | "openai" | ...
     model: str              # "llama3.2" 등
@@ -64,6 +75,7 @@ class AppConfig(BaseModel):
     http_config: Optional[HTTPConfig] = None
     redis: Optional[RedisConfig] = None
     redis_consumer: Optional[RedisConsumerConfig] = None
+    db: Optional[DBConfig] = None
 
     # 시스템 모니터링 관련 기본값 설정
     enable_monitoring: Optional[bool] = True
@@ -82,6 +94,7 @@ class AppContext:
         self.ws_handler = None
         self.redis_handler = None
         self.redis_consumer = None
+        self.db_handler = None
 
         # 매니저
         self.system_monitor = None
@@ -130,6 +143,19 @@ class AppContext:
 
         self.log.debug("- end init websocket")
             
+    def _init_db(self):
+        self.log.debug("+ start init DB")
+
+        if not self.cfg.db:
+            self.log.debug("- skip init DB (no config)")
+            return
+
+        db_config = self.cfg.db.dict()
+        self.db_handler = DBHandler(db_config)
+        self.db_handler.init_connection()
+
+        self.log.debug("- end init DB")
+
     def _init_redis(self):
         self.log.debug("+ start init Redis")
 
@@ -143,7 +169,7 @@ class AppContext:
         self.redis_consumer = RedisStreamConsumer(self)
         
         self.log.debug("- end init RedisStreamConsumer")
-        
+
     def _init_system_manager(self):
         self.log.debug("+ start init system manager")
 
