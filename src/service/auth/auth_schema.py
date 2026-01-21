@@ -1,5 +1,11 @@
 from typing import Optional, Dict, Any
+from enum import Enum
 from pydantic import BaseModel, Field, EmailStr
+
+class UserRole(str, Enum):
+    SUPER_ADMIN = "SUPER_ADMIN"
+    ADMIN = "ADMIN"
+    CLIENT = "CLIENT"
 
 class UserBase(BaseModel):
     """
@@ -17,6 +23,7 @@ class UserBase(BaseModel):
     # 간편 로그인(Social Login) 확장을 위한 필드
     provider: str = Field("email", description="가입 경로 (email, google, naver, kakao 등)")
     providerId: Optional[str] = Field(None, description="소셜 로그인 제공자 측의 식별자")
+    role: UserRole = Field(UserRole.CLIENT, description="권한 레벨 (SUPER_ADMIN, ADMIN, CLIENT)")
 
 
 class UserCreate(UserBase):

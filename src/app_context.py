@@ -12,7 +12,7 @@ from pydantic import BaseModel
 from typing import Any
 from typing import Optional
 
-import modules.logger as logger
+from src.modules import logger
 
 from src.modules.system_monitor import SystemMonitor
 from src.handler.websocket_handler import WebSocketHandler
