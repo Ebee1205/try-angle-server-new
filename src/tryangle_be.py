@@ -16,6 +16,10 @@ from src.app_context import AppContext
 
 from service.basic.basic_api import router as basic_router
 # from service.reference.reference_api import router as reference_router
+from service.files.files_api import (
+    router as files_router,
+    public_router as files_public_router,
+)
 
 class AppFactory:
     """애플리케이션 팩토리 클래스"""
@@ -89,6 +93,8 @@ class AppFactory:
         routers = [
             basic_router,
             # reference_router,
+            files_router,
+            files_public_router,
         ]
         for router in routers:
             app.include_router(router)
