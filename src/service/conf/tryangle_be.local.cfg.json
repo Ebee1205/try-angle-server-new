@@ -13,10 +13,15 @@
       "allow_headers": ["*"],
       "allow_credentials": true
     },
-    
-    "llm": {
-      "provider": "gemini",
-      "model": "gemini-2.0-flash"
+
+    "rmq": {
+      "host": "localhost",
+      "port": 5672,
+      "user": "guest",
+      "password": "guest",
+      "queues": [
+        { "name": "tryangle-send-logs", "type": "req" }
+      ]
     },
     
     "db": {

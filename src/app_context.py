@@ -16,9 +16,10 @@ from src.modules import logger
 
 from src.modules.system_monitor import SystemMonitor
 from src.handler.websocket_handler import WebSocketHandler
+from src.handler.db_handler import DBHandler
+from src.handler.rabbitmq_handler import RabbitMQHandler
 from src.handler.redis_handler import RedisHandler
 from src.handler.redis_stream_consumer import RedisStreamConsumer
-from src.handler.db_handler import DBHandler
 
 class LoggerConfig(BaseModel):
     level: str
@@ -44,6 +45,13 @@ class DBConfig(BaseModel):
     charset: Optional[str] = "utf8mb4"
     autocommit: Optional[bool] = True
     
+class RMQConfig(BaseModel):
+    host: Optional[str]
+    port: Optional[int]
+    user: Optional[str]
+    password: Optional[str]
+    queues: Optional[list[dict]]
+
 class RedisConfig(BaseModel):
     host: Optional[str]
     port: Optional[int]
@@ -73,6 +81,8 @@ class AppConfig(BaseModel):
     # 구성 요소들
     logger: LoggerConfig
     http_config: Optional[HTTPConfig] = None
+
+    rmq: Optional[RMQConfig] = None
     redis: Optional[RedisConfig] = None
     redis_consumer: Optional[RedisConsumerConfig] = None
     db: Optional[DBConfig] = None
@@ -142,19 +152,13 @@ class AppContext:
         self.ws_handler = WebSocketHandler(self)
 
         self.log.debug("- end init websocket")
-            
-    def _init_db(self):
-        self.log.debug("+ start init DB")
 
-        if not self.cfg.db:
-            self.log.debug("- skip init DB (no config)")
-            return
+    def _init_rmq(self):
+        self.log.debug("+ start init RabbitMQ")
 
-        db_config = self.cfg.db.dict()
-        self.db_handler = DBHandler(db_config)
-        self.db_handler.init_connection()
+        self.rmq_handler = RabbitMQHandler(self)
 
-        self.log.debug("- end init DB")
+        self.log.debug("- end init RabbitMQ")
 
     def _init_redis(self):
         self.log.debug("+ start init Redis")
@@ -169,6 +173,19 @@ class AppContext:
         self.redis_consumer = RedisStreamConsumer(self)
         
         self.log.debug("- end init RedisStreamConsumer")
+        
+    def _init_db(self):
+        self.log.debug("+ start init DB")
+
+        if not self.cfg.db:
+            self.log.debug("- skip init DB (no config)")
+            return
+
+        db_config = self.cfg.db.dict()
+        self.db_handler = DBHandler(db_config)
+        self.db_handler.init_connection()
+
+        self.log.debug("- end init DB")
 
     def _init_system_manager(self):
         self.log.debug("+ start init system manager")

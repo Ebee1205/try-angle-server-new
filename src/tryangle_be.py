@@ -111,7 +111,7 @@ class AppFactory:
             # 초기화 후 연결 설정
             await AppFactory._initialize_managers(ctx)
             await AppFactory._initialize_handlers(ctx)
-            # await AppFactory._setup_connections(ctx)
+            await AppFactory._setup_connections(ctx)
             
             ctx.log.info("     == Initialization complete")
 
@@ -138,20 +138,24 @@ class AppFactory:
         ctx.log.info("     - Initializing handlers...")
         ctx._init_db()
         ctx._init_websocket()
-        
+        ctx._init_rmq()
 
         # ctx._init_redis()
         # ctx._init_redis_consumer()
 
-    # @staticmethod
-    # async def _setup_connections(ctx: AppContext) -> None:
-    #     """외부 서비스 연결 설정"""
-    #     # Redis 연결
-    #     await ctx.redis_handler.connect()
-    #     await ctx.redis_consumer.init_group()
+    @staticmethod
+    async def _setup_connections(ctx: AppContext) -> None:
+        """외부 서비스 연결 설정"""
+        # RabbitMQ 연결
+        await ctx.rmq_handler.connect()
+        await ctx.rmq_handler.consume_multi()
+
+        # # Redis 연결
+        # await ctx.redis_handler.connect()
+        # await ctx.redis_consumer.init_group()
         
-    #     ctx.redis_consumer_task = asyncio.create_task(ctx.redis_consumer.consume())
-    #     await asyncio.sleep(0)  # 태스크가 시작되도록 제어권 양보   
+        # ctx.redis_consumer_task = asyncio.create_task(ctx.redis_consumer.consume())
+        # await asyncio.sleep(0)  # 태스크가 시작되도록 제어권 양보   
 
     
     @staticmethod
@@ -183,6 +187,14 @@ class AppFactory:
                 ctx.log.info("     -- WebSocket handler closed")
             except Exception as e:
                 ctx.log.warning(f"     - WebSocket close failed: {e}")
+        
+        # RabbitMQ 종료
+        if ctx.rmq_handler:
+            try:
+                await ctx.rmq_handler.disconnect()
+                ctx.log.info("     -- RabbitMQ handler closed")
+            except Exception as e:
+                ctx.log.warning(f"     - RabbitMQ close failed: {e}")
 
         # 모니터링 종료
         if ctx.system_monitor:
