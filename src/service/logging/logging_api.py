@@ -7,7 +7,7 @@ import random
 import asyncio
 from src.utils.rabbitmq_utils import rmq_send_response
 
-router = APIRouter(prefix="/system", tags=["System"])
+router = APIRouter(prefix="/api/system", tags=["System"])
 
 class LogMessage(BaseModel):
     level: str = "WARNING"
