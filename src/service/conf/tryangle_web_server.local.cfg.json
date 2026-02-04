@@ -1,6 +1,6 @@
 {
     "environment": "local",
-    "project_name": "tryangle_be",
+    "project_name": "tryangle_web_server",
     "api_v1_str": "/api/v1",
     "host": "localhost",
     "port": 3000,
@@ -20,11 +20,19 @@
       "user": "guest",
       "password": "guest",
       "queues": [
-        { "name": "tryangle-send-logs", "type": "req" }
+        { "name": "tryangle-send-logs", "type": "pub" }
       ]
     },
     
     "db": {
+      "host": "localhost",
+      "port": 3306,
+      "user": "guest",
+      "password": "abcd1234",
+      "database": "tryangle"
+    },
+    
+    "mongo_db": {
       "host": "localhost",
       "port": 3306,
       "user": "guest",
@@ -47,7 +55,7 @@
 
     "logger": {
         "level": "debug",
-        "path": "./logs/tryangle_be.log-%DATE%",
+        "path": "./logs/tryangle_web_server.log-%DATE%",
         "suffix": "%Y-%m-%d",
         "max_bytes": 10485760,
         "max_files": "3d",

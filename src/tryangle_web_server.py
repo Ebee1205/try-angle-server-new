@@ -64,7 +64,7 @@ class AppFactory:
         app.state.ctx = ctx
         
         # 설정 로드
-        ctx.load_config("src/service/conf/tryangle_be.local.cfg.json")
+        ctx.load_config("src/service/conf/tryangle_web_server.local.cfg.json")
         ctx.load_json_map("event_map", "src/service/conf/tryangle-event-map.cfg.json")
 
         # CORS 설정
@@ -219,4 +219,4 @@ app = AppFactory.create_app()
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run("src.tryangle_be:app", host="0.0.0.0", port=8000, reload=True)
+    uvicorn.run("src.tryangle_web_server:app", host="0.0.0.0", port=8000, reload=True)
