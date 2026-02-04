@@ -17,6 +17,7 @@ from src.modules import logger
 from src.modules.system_monitor import SystemMonitor
 from src.handler.websocket_handler import WebSocketHandler
 from src.handler.db_handler import DBHandler
+from src.handler.mongodb_handler import MongoDBHandler
 from src.handler.rabbitmq_handler import RabbitMQHandler
 from src.handler.redis_handler import RedisHandler
 from src.handler.redis_stream_consumer import RedisStreamConsumer
@@ -44,6 +45,13 @@ class DBConfig(BaseModel):
     database: Optional[str] = None
     charset: Optional[str] = "utf8mb4"
     autocommit: Optional[bool] = True
+
+class MongoDBConfig(BaseModel):
+    host: Optional[str]
+    port: Optional[int]
+    user: Optional[str]
+    password: Optional[str] = None
+    database: Optional[str] = None
     
 class RMQConfig(BaseModel):
     host: Optional[str]
@@ -79,6 +87,7 @@ class AppConfig(BaseModel):
     access_token_expire_minutes: int
 
     # 구성 요소들
+    mongo_db: Optional[MongoDBConfig] = None
     logger: LoggerConfig
     http_config: Optional[HTTPConfig] = None
 
@@ -104,6 +113,7 @@ class AppContext:
         self.ws_handler = None
         self.redis_handler = None
         self.redis_consumer = None
+        self.mongo_handler = None
         self.db_handler = None
 
         # 매니저
@@ -186,6 +196,19 @@ class AppContext:
         self.db_handler.init_connection()
 
         self.log.debug("- end init DB")
+        
+    def _init_mongodb(self):
+        self.log.debug("+ start init MongoDB")
+        
+        if not self.cfg.mongo_db:
+            self.log.debug("- skip init MongoDB (no config)")
+            return
+            
+        mongo_config = self.cfg.mongo_db.dict()
+        self.mongo_handler = MongoDBHandler(mongo_config)
+        self.mongo_handler.init_connection()
+        
+        self.log.debug("- end init MongoDB")
 
     def _init_system_manager(self):
         self.log.debug("+ start init system manager")

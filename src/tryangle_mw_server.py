@@ -43,6 +43,7 @@ class PythonServer:
             
             # 핸들러 초기화
             self.ctx._init_rmq()
+            self.ctx._init_mongodb()
             # self.ctx._init_redis()
             # self.ctx._init_redis_consumer()
 
@@ -132,6 +133,13 @@ class PythonServer:
                 self.ctx.log.info("     -- RabbitMQ handler closed")
             except Exception as e:
                 self.ctx.log.warning(f"     - RabbitMQ close failed: {e}")
+
+        if self.ctx.mongo_handler:
+            try:
+                self.ctx.mongo_handler.close_connection()
+                self.ctx.log.info("     -- MongoDB handler closed")
+            except Exception as e:
+                self.ctx.log.warning(f"     - MongoDB close failed: {e}")
 
         if self.ctx.system_monitor:
             try:
