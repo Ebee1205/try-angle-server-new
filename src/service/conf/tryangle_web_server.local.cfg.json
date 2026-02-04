@@ -32,11 +32,11 @@
       "database": "tryangle"
     },
     
-    "mongo_db": {
+    "mongodb": {
       "host": "localhost",
-      "port": 3306,
+      "port": 27017,
       "user": "guest",
-      "password": "abcd1234",
+      "password": "guest",
       "database": "tryangle"
     },
 

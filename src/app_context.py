@@ -87,7 +87,7 @@ class AppConfig(BaseModel):
     access_token_expire_minutes: int
 
     # 구성 요소들
-    mongo_db: Optional[MongoDBConfig] = None
+    mongodb: Optional[MongoDBConfig] = None
     logger: LoggerConfig
     http_config: Optional[HTTPConfig] = None
 
@@ -200,11 +200,11 @@ class AppContext:
     def _init_mongodb(self):
         self.log.debug("+ start init MongoDB")
         
-        if not self.cfg.mongo_db:
+        if not self.cfg.mongodb:
             self.log.debug("- skip init MongoDB (no config)")
             return
             
-        mongo_config = self.cfg.mongo_db.dict()
+        mongo_config = self.cfg.mongodb.dict()
         self.mongo_handler = MongoDBHandler(mongo_config)
         self.mongo_handler.init_connection()
         

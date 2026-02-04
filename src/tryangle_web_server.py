@@ -126,7 +126,7 @@ class AppFactory:
     @staticmethod
     async def _initialize_managers(ctx: AppContext) -> None:
         """매니저 초기화"""
-        print("     - Initializing handlers...")   
+        print("     - Initializing managers...")   
         ctx._init_logger()
         AppFactory._test_logging(ctx.log)
         
@@ -137,6 +137,7 @@ class AppFactory:
         """핸들러 초기화"""    
         ctx.log.info("     - Initializing handlers...")
         ctx._init_db()
+        ctx._init_mongodb()
         ctx._init_websocket()
         ctx._init_rmq()
 
@@ -195,7 +196,15 @@ class AppFactory:
                 ctx.log.info("     -- RabbitMQ handler closed")
             except Exception as e:
                 ctx.log.warning(f"     - RabbitMQ close failed: {e}")
-
+        
+        # MongoDB 종료
+        if ctx.mongo_handler:
+            try:
+                ctx.mongo_handler.close_connection()
+                ctx.log.info("     -- MongoDB handler closed")
+            except Exception as e:
+                ctx.log.warning(f"     - MongoDB close failed: {e}")
+        
         # 모니터링 종료
         if ctx.system_monitor:
             try:
