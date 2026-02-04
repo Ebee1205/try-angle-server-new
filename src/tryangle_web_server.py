@@ -21,6 +21,7 @@ from src.service.files.files_api import (
     public_router as files_public_router,
 )
 from src.service.auth.auth_api import router as auth_router
+from src.service.logging.logging_api import router as logging_router
 
 class AppFactory:
     """애플리케이션 팩토리 클래스"""
@@ -97,6 +98,7 @@ class AppFactory:
             files_router,
             auth_router,
             files_public_router,
+            logging_router,
         ]
         for router in routers:
             app.include_router(router)
