@@ -35,8 +35,8 @@
     "mongodb": {
       "host": "localhost",
       "port": 27017,
-      "user": "guest",
-      "password": "guest",
+      "user": null,
+      "password": null,
       "database": "tryangle"
     },
 
