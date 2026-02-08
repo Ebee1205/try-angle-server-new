@@ -2,9 +2,9 @@
 from fastapi import APIRouter, Request, status, BackgroundTasks
 from pydantic import BaseModel
 from typing import Optional
-from datetime import datetime
-import random
 import asyncio
+from pathlib import Path
+import orjson
 from src.utils.rabbitmq_utils import rmq_send_response
 
 router = APIRouter(prefix="/api/system", tags=["System"])
@@ -15,33 +15,38 @@ class LogMessage(BaseModel):
     duration: float = 1.0
 
 async def generate_simulation_logs(ctx, log_data: LogMessage):
-    total_frames = int(log_data.duration * 30)
-    delay = 1.0 / 30.0
     queue_name = "tryangle-send-logs"
+    data_path = Path(__file__).resolve().parents[3] / "transformed_hex_payloads.jsonl"
 
-    for _ in range(total_frames):
-        details = {
-            "temp": round(random.uniform(40.0, 90.0), 1),
-            "cpu": round(random.uniform(10.0, 99.9), 1),
-            "fps_drop": random.choice([True, False])
-        }
+    if not data_path.exists():
+        ctx.log.error("LogProducer", f"JSONL file not found: {data_path}")
+        return
 
-        payload = {
-            "hd": {
-                "event": "system.log",
-                "tid": int(datetime.now().timestamp() * 1000)
-            },
-            "bd": {
-                "level": log_data.level,
-                "category": "Thermal",
-                "code": "HIGH_TEMPERATURE",
-                "service": log_data.service,
-                "details": details
-            }
-        }
-        
-        await rmq_send_response(ctx, queue_name, payload)
-        await asyncio.sleep(delay)
+    total_lines = 0
+    with data_path.open("r", encoding="utf-8") as file:
+        for line in file:
+            if line.strip():
+                total_lines += 1
+
+    delay = 0.0
+    if log_data.duration and total_lines > 0:
+        delay = log_data.duration / total_lines
+
+    with data_path.open("r", encoding="utf-8") as file:
+        for line in file:
+            line = line.strip()
+            if not line:
+                continue
+
+            try:
+                payload = orjson.loads(line)
+            except orjson.JSONDecodeError as exc:
+                ctx.log.error("LogProducer", f"Invalid JSONL line: {exc}")
+                continue
+
+            await rmq_send_response(ctx, queue_name, payload)
+            if delay > 0:
+                await asyncio.sleep(delay)
 
 @router.post("/log", status_code=status.HTTP_202_ACCEPTED)
 async def send_log(request: Request, log_data: LogMessage, background_tasks: BackgroundTasks):
