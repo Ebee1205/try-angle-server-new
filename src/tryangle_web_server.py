@@ -15,7 +15,7 @@ import asyncio
 from src.app_context import AppContext
 
 from src.service.basic.basic_api import router as basic_router
-# from src.service.reference.reference_api import router as reference_router
+from src.service.reference.reference_api import router as reference_router
 from src.service.files.files_api import router as files_router
 from src.service.auth.auth_api import router as auth_router
 from src.service.logging.logging_api import router as logging_router
@@ -92,7 +92,7 @@ class AppFactory:
         """라우터 등록"""
         routers = [
             basic_router,
-            # reference_router,
+            reference_router,
             files_router,
             auth_router,
             logging_router,
