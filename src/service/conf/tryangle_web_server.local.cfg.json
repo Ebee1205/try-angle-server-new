@@ -53,6 +53,16 @@
       "consumer_name": "web-consumer-1"
     },
 
+    "r2": {
+      "account_id": "your-cloudflare-account-id",
+      "bucket_name": "tryangle-images",
+      "region": "auto",
+      "endpoint_url": "https://2a9b33fa7ea08ae491598e555233bddb.r2.cloudflarestorage.com/tryangle-images",
+      "public_base_url": "https://pub-a309ad8a0a6e4a629ad982d710e35276.r2.dev",
+      "image_prefix": "images",
+      "upload_url_expire_seconds": 900
+    },
+
     "logger": {
         "level": "debug",
         "path": "./logs/tryangle_web_server.log-%DATE%",

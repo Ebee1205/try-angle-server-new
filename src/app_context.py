@@ -72,6 +72,18 @@ class RedisConsumerConfig(BaseModel):
     consumer_name: Optional[str]
 
 
+class R2Config(BaseModel):
+    account_id: Optional[str] = None
+    access_key_id: Optional[str] = None
+    secret_access_key: Optional[str] = None
+    bucket_name: Optional[str] = None
+    region: Optional[str] = "auto"
+    endpoint_url: Optional[str] = None
+    public_base_url: Optional[str] = None
+    image_prefix: Optional[str] = "images"
+    upload_url_expire_seconds: Optional[int] = 900
+
+
 class LLMConfig(BaseModel):
     provider: str           # "ollama" | "openai" | ...
     model: str              # "llama3.2" 등
@@ -94,6 +106,7 @@ class AppConfig(BaseModel):
     rmq: Optional[RMQConfig] = None
     redis: Optional[RedisConfig] = None
     redis_consumer: Optional[RedisConsumerConfig] = None
+    r2: Optional[R2Config] = None
     db: Optional[DBConfig] = None
 
     # 시스템 모니터링 관련 기본값 설정
@@ -144,6 +157,28 @@ class AppContext:
             return True
         except Exception as e:
             print(f"!! failed to load JSON map '{name}' from {path}: {e}")
+            return False
+
+    def load_token(self, path: str):
+        """토큰 파일을 로드하여 cfg의 각 서비스 설정에 병합"""
+        try:
+            with open(path, "rb") as f:
+                tokens = orjson.loads(f.read())
+
+            if "r2" in tokens and self.cfg.r2:
+                r2 = tokens["r2"]
+                if "access_key_id" in r2:
+                    self.cfg.r2.access_key_id = r2["access_key_id"]
+                if "secret_access_key" in r2:
+                    self.cfg.r2.secret_access_key = r2["secret_access_key"]
+
+            print(f"> loaded token from {path}")
+            return True
+        except FileNotFoundError:
+            print(f"!! token file not found: {path}")
+            return False
+        except Exception as e:
+            print(f"!! failed to load token '{path}': {e}")
             return False
 
     def _init_logger(self):

@@ -67,6 +67,7 @@ class AppFactory:
         # 설정 로드
         ctx.load_config("src/service/conf/tryangle_web_server.local.cfg.json")
         ctx.load_json_map("event_map", "src/service/conf/tryangle-event-map.cfg.json")
+        ctx.load_token("src/service/conf/tryangel_cloudflare_token.json")
 
         # CORS 설정
         AppFactory._setup_cors(app, ctx)
