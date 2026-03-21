@@ -1,4 +1,5 @@
 aio-pika
+aioboto3
 aiohappyeyeballs
 aiohttp
 aiormq

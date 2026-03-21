@@ -16,10 +16,7 @@ from src.app_context import AppContext
 
 from src.service.basic.basic_api import router as basic_router
 # from src.service.reference.reference_api import router as reference_router
-from src.service.files.files_api import (
-    router as files_router,
-    public_router as files_public_router,
-)
+from src.service.files.files_api import router as files_router
 from src.service.auth.auth_api import router as auth_router
 from src.service.logging.logging_api import router as logging_router
 
@@ -98,7 +95,6 @@ class AppFactory:
             # reference_router,
             files_router,
             auth_router,
-            files_public_router,
             logging_router,
         ]
         for router in routers:

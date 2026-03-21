@@ -6,45 +6,78 @@ from typing import Dict, Optional, Any
 import threading
 import uuid
 
-from fastapi import UploadFile
+import aioboto3
+from fastapi import UploadFile, HTTPException
 
 from src.service.files.files_schema import FileMetadata
 
 
-_FILES_DIR = Path("files")
 _STORE: Dict[str, FileMetadata] = {}
 _STORE_LOCK = threading.Lock()
 
+IMAGE_MAX_BYTES = 10 * 1024 * 1024  # 10 MB
+ALLOWED_CONTENT_TYPES = {
+    "image/jpeg",
+    "image/png",
+    "image/gif",
+    "image/webp",
+    "image/bmp",
+}
 
-def _ensure_dir() -> None:
-    _FILES_DIR.mkdir(parents=True, exist_ok=True)
+
+def _r2_client(ctx):
+    r2 = ctx.cfg.r2
+    session = aioboto3.Session()
+    return session.client(
+        "s3",
+        endpoint_url=r2.endpoint_url,
+        aws_access_key_id=r2.access_key_id,
+        aws_secret_access_key=r2.secret_access_key,
+        region_name=r2.region,
+    )
 
 
-def save_file(ctx, file: UploadFile, meta: Optional[Dict[str, Any]] = None) -> FileMetadata:
-    _ensure_dir()
+async def save_file(ctx, file: UploadFile, meta: Optional[Dict[str, Any]] = None) -> FileMetadata:
+    # --- 유효성 검사 ---
+    content_type = file.content_type or ""
+    if content_type not in ALLOWED_CONTENT_TYPES:
+        raise HTTPException(
+            status_code=415,
+            detail=f"Unsupported media type '{content_type}'. Allowed: {sorted(ALLOWED_CONTENT_TYPES)}",
+        )
 
+    data = await file.read()
+    if len(data) > IMAGE_MAX_BYTES:
+        raise HTTPException(
+            status_code=413,
+            detail=f"Image too large ({len(data)} bytes). Max allowed: {IMAGE_MAX_BYTES} bytes (10 MB)",
+        )
+
+    # --- R2 업로드 ---
+    r2_cfg = ctx.cfg.r2
     file_id = uuid.uuid4().hex
-    safe_name = Path(file.filename or "uploaded.bin").name
-    stored_name = f"{file_id}_{safe_name}"
-    dest = _FILES_DIR / stored_name
+    safe_name = Path(file.filename or "upload.bin").name
+    key = f"{r2_cfg.image_prefix}/{file_id}_{safe_name}"
 
-    size = 0
-    with dest.open("wb") as out:
-        while True:
-            chunk = file.file.read(1024 * 1024)
-            if not chunk:
-                break
-            size += len(chunk)
-            out.write(chunk)
+    async with _r2_client(ctx) as client:
+        await client.put_object(
+            Bucket=r2_cfg.bucket_name,
+            Key=key,
+            Body=data,
+            ContentType=content_type,
+        )
+
+    base_url = (r2_cfg.public_base_url or "").rstrip("/")
+    public_url = f"{base_url}/{key}"
 
     metadata = FileMetadata(
         id=file_id,
         filename=safe_name,
-        stored_name=stored_name,
-        path=str(dest),
-        url=f"/files/{stored_name}",
-        size=size,
-        content_type=file.content_type,
+        stored_name=key,
+        path=key,
+        url=public_url,
+        size=len(data),
+        content_type=content_type,
         meta=meta or {},
         created_at=datetime.utcnow(),
     )
@@ -52,25 +85,27 @@ def save_file(ctx, file: UploadFile, meta: Optional[Dict[str, Any]] = None) -> F
     with _STORE_LOCK:
         _STORE[file_id] = metadata
 
-    ctx.log.info(f"Stored file | id={file_id} name={safe_name} size={size}")
+    ctx.log.info(f"Uploaded to R2 | id={file_id} key={key} size={len(data)}")
     return metadata
 
 
-def delete_file(ctx, file_id: str) -> Optional[FileMetadata]:
+async def delete_file(ctx, file_id: str) -> Optional[FileMetadata]:
     with _STORE_LOCK:
         info = _STORE.pop(file_id, None)
 
     if not info:
         return None
 
-    path = Path(info.path)
     try:
-        if path.exists():
-            path.unlink()
+        async with _r2_client(ctx) as client:
+            await client.delete_object(
+                Bucket=ctx.cfg.r2.bucket_name,
+                Key=info.stored_name,
+            )
     except Exception as e:
-        ctx.log.warning(f"Failed to delete file | id={file_id} | err={e}")
+        ctx.log.warning(f"Failed to delete from R2 | id={file_id} | err={e}")
 
-    ctx.log.info(f"Deleted file | id={file_id}")
+    ctx.log.info(f"Deleted from R2 | id={file_id}")
     return info
 
 
@@ -84,9 +119,17 @@ def list_files() -> list[FileMetadata]:
         return list(_STORE.values())
 
 
-def resolve_path_by_stored_name(stored_name: str) -> Optional[Path]:
-    # stored_name는 저장 시점에 id_safeName 형태라서 파일명만 허용
-    candidate = _FILES_DIR / Path(stored_name).name
-    if candidate.exists():
-        return candidate
-    return None
+async def get_presigned_url(ctx, file_id: str) -> Optional[str]:
+    with _STORE_LOCK:
+        info = _STORE.get(file_id)
+    if not info:
+        return None
+
+    r2_cfg = ctx.cfg.r2
+    async with _r2_client(ctx) as client:
+        url = await client.generate_presigned_url(
+            "get_object",
+            Params={"Bucket": r2_cfg.bucket_name, "Key": info.stored_name},
+            ExpiresIn=r2_cfg.upload_url_expire_seconds,
+        )
+    return url
