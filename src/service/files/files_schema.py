@@ -4,6 +4,17 @@ from typing import Any, Dict, Optional
 from pydantic import BaseModel, Field
 
 
+IMAGE_MAX_BYTES = 10 * 1024 * 1024  # 10 MB
+ALLOWED_CONTENT_TYPES = {
+    "image/jpeg",
+    "image/png",
+    "image/gif",
+    "image/webp",
+    "image/bmp",
+}
+ALLOWED_FOLDERS = {"profiles", "reference"}
+
+
 class FileMetadata(BaseModel):
     id: str
     filename: str

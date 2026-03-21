@@ -10,7 +10,12 @@ from src.service.files.files_schema import FileListResponse
 router = APIRouter(prefix="/api/files", tags=["Files"])
 
 @router.post("/upload", status_code=201)
-async def upload_file(request: Request, file: UploadFile = File(...), metadata: str | None = Form(None)):
+async def upload_file(
+    request: Request,
+    file: UploadFile = File(...),
+    folder: str = Form(..., description="Upload folder inside the bucket (e.g. profiles, reference)"),
+    metadata: str | None = Form(None),
+):
     ctx = request.app.state.ctx
 
     meta_dict = None
@@ -20,7 +25,7 @@ async def upload_file(request: Request, file: UploadFile = File(...), metadata: 
         except Exception:
             raise HTTPException(status_code=400, detail="metadata must be JSON string")
 
-    stored = await files_service.save_file(ctx, file, meta_dict)
+    stored = await files_service.save_file(ctx, file, meta_dict, prefix=folder)
     return {"code": codes.ResponseStatus.SUCCESS["code"], "data": stored}
 
 

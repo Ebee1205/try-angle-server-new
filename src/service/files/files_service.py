@@ -9,20 +9,11 @@ import uuid
 import aioboto3
 from fastapi import UploadFile, HTTPException
 
-from src.service.files.files_schema import FileMetadata
+from src.service.files.files_schema import FileMetadata, IMAGE_MAX_BYTES, ALLOWED_CONTENT_TYPES, ALLOWED_FOLDERS
 
 
 _STORE: Dict[str, FileMetadata] = {}
 _STORE_LOCK = threading.Lock()
-
-IMAGE_MAX_BYTES = 10 * 1024 * 1024  # 10 MB
-ALLOWED_CONTENT_TYPES = {
-    "image/jpeg",
-    "image/png",
-    "image/gif",
-    "image/webp",
-    "image/bmp",
-}
 
 
 def _r2_client(ctx):
@@ -37,7 +28,7 @@ def _r2_client(ctx):
     )
 
 
-async def save_file(ctx, file: UploadFile, meta: Optional[Dict[str, Any]] = None) -> FileMetadata:
+async def save_file(ctx, file: UploadFile, meta: Optional[Dict[str, Any]] = None, prefix: Optional[str] = None) -> FileMetadata:
     # --- 유효성 검사 ---
     content_type = file.content_type or ""
     if content_type not in ALLOWED_CONTENT_TYPES:
@@ -55,9 +46,17 @@ async def save_file(ctx, file: UploadFile, meta: Optional[Dict[str, Any]] = None
 
     # --- R2 업로드 ---
     r2_cfg = ctx.cfg.r2
+    if not prefix:
+        raise HTTPException(status_code=400, detail="'prefix' (upload folder) is required")
+    folder = prefix.strip("/")
+    if folder not in ALLOWED_FOLDERS:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Invalid folder '{folder}'. Allowed: {sorted(ALLOWED_FOLDERS)}",
+        )
     file_id = uuid.uuid4().hex
     safe_name = Path(file.filename or "upload.bin").name
-    key = f"{r2_cfg.image_prefix}/{file_id}_{safe_name}"
+    key = f"{folder}/{file_id}_{safe_name}"
 
     async with _r2_client(ctx) as client:
         await client.put_object(
