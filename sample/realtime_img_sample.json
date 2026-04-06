@@ -1,0 +1,227 @@
+[
+  {
+    "hd": {
+      "tid": 1770563678652,
+      "event": "log.pose"
+    },
+    "bd": {
+      "meta": {
+        "gate": 0,
+        "fseq": 12
+      },
+      "data": {
+        "cur": {
+          "size": {
+            "w": 1920,
+            "h": 1440
+          },
+          "aspectRatio": "4:3"
+        },
+        "res": {
+          "score": 0.0,
+          "passed": false,
+          "feedback": "카메라 비율을 16:9로 변경하세요",
+          "category": "aspect_ratio"
+        }
+      }
+    }
+  },
+
+  {
+    "hd": {
+      "tid": 1770563678652,
+      "event": "log.pose"
+    },
+    "bd": {
+      "meta": {
+        "gate": 1,
+        "fseq": 12
+      },
+      "data": {
+        "cur": {
+          "zoomFactor": 2.0,
+          "focalLengthInfo": {
+            "focalLengthMM": 52.0
+          }
+        },
+        "res": {
+          "score": 0.92,
+          "passed": true,
+          "feedback": "줌 완벽",
+          "metadata": {
+            "action": "none",
+            "currentZoom": "2.0x"
+          }
+        }
+      }
+    }
+  },
+
+  {
+    "hd": {
+      "tid": 1770563678652,
+      "event": "log.pose"
+    },
+    "bd": {
+      "meta": {
+        "gate": 2,
+        "fseq": 12
+      },
+      "data": {
+        "cur": {
+          "torsoLength": 0.28,
+          "bbox": {
+            "height": 0.58
+          }
+        },
+        "res": {
+          "score": 0.6,
+          "passed": false,
+          "feedback": "50cm 앞으로 다가가세요",
+          "metadata": {
+            "action": "moveForward",
+            "magnitude": "50cm"
+          }
+        }
+      }
+    }
+  },
+
+  {
+    "hd": {
+      "tid": 1770563678652,
+      "event": "log.pose"
+    },
+    "bd": {
+      "meta": {
+        "gate": 3,
+        "fseq": 12
+      },
+      "data": {
+        "cur": {
+          "geoCalib": {
+            "pitchDegrees": -8.1,
+            "rollDegrees": 2.3
+          }
+        },
+        "res": {
+          "score": 0.78,
+          "passed": true,
+          "feedback": "카메라를 아래로 7도 기울이세요",
+          "metadata": {
+            "action": "tiltDown",
+            "pitchDiff": "7.2",
+            "rollDiff": "1.5"
+          }
+        }
+      }
+    }
+  },
+
+  {
+    "hd": {
+      "tid": 1770563678652,
+      "event": "log.pose"
+    },
+    "bd": {
+      "meta": {
+        "gate": 4,
+        "fseq": 12
+      },
+      "data": {
+        "cur": {
+          "centroid": {
+            "x": 0.55,
+            "y": 0.43
+          }
+        },
+        "res": {
+          "score": 0.82,
+          "passed": true,
+          "feedback": "왼쪽으로 반 걸음 이동",
+          "metadata": {
+            "action": "moveLeft",
+            "diffX": 0.07,
+            "diffY": -0.02
+          }
+        }
+      }
+    }
+  },
+
+  {
+    "hd": {
+      "tid": 1770563678652,
+      "event": "log.pose"
+    },
+    "bd": {
+      "meta": {
+        "gate": 5,
+        "fseq": 12
+      },
+      "data": {
+        "cur": {
+          "kp": [{"index": 0, "name": "nose", "x": 0.48, "y": 0.15, "confidence": 0.95 }],
+          "pose_diff": {
+            "angleDifferences": {
+              "shoulder_tilt": 3.2,
+              "face": 8.5,
+              "left_arm": 12.8,
+              "right_arm": 25.3,
+              "left_leg": 5.1,
+              "right_leg": 7.4
+            },
+            "partWeights": {
+              "shoulder_tilt": 1.5,
+              "face": 1.5,
+              "left_arm": 1.0,
+              "right_arm": 1.0,
+              "left_leg": 0.7,
+              "right_leg": 0.7,
+              "left_hand": 0.3,
+              "right_hand": 0.3,
+              "feet": 0.2
+            }
+          }
+        },
+        "res": {
+          "score": 0.82,
+          "passed": true,
+          "feedback": "오른팔을 내려주세요",
+          "category": "pose",
+          "metadata": {
+            "action": "adjustPose"
+          }
+        }
+      }
+    }
+  },
+
+  {
+    "hd": {
+      "tid": 1770563678652,
+      "event": "log.pose"
+    },
+    "bd": {
+      "meta": {
+        "gate": 5,
+        "fseq": 12
+      },
+      "data": {
+        "cur": {
+          "kp": "14000cb205dc13ba0c4e03e814500c4e03e812f20ce401f415180ce401f410fe10362260170c1004238c0f6e119421341806122a119411c60ed8251c14e610681770122a180623f015e017d4232812f21cb6213416761c84206c141e1fa41f4016111f721e7813ba206c1d4c1450203a1b5813ec1f721e781643203a1c8415ae20081a90",
+          "pv": "03520096FFFF0064FFFF0064FFFF0064FFFF006401400096014000960500006409E200640500006409E20064FFFF0064FFFF006401FE004602E4004601FE004602E40046..."
+        },
+        "res": {
+          "score": 0.82,
+          "passed": true,
+          "feedback": "오른팔을 내려주세요",
+          "category": "pose",
+          "metadata": {
+            "action": "adjustPose"
+          }
+        }
+      }
+    }
+  }
+]

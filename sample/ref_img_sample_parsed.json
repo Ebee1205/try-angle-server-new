@@ -1,0 +1,62 @@
+{
+  "refImg": {
+    "path": "/legacy/hot1.jpg",
+    "id": "img12345"
+  },
+  "refData": {
+    "aspectRatio": "16:9",
+    "size": {
+      "w": 736.0,
+      "h": 981.0
+    },
+    "bbox": "0f0a071c09f618ce",
+    "keypoints": "14000cb205dc13ba0c4e03e814500c4e03e812f20ce401f415180ce401f410fe10362260170c1004238c0f6e119421341806122a119411c60ed8251c14e610681770122a180623f015e017d4232812f21cb6213416761c84206c141e1fa41f4016111f721e7813ba206c1d4c1450203a1b5813ec1f721e781643203a1c8415ae20081a90",
+    "geoCalib": {
+      "pitchDegrees": -15.3,
+      "rollDegrees": 0.8,
+      "vfovDegrees": 48.5,
+      "focalLengthMM": 50,
+      "focalLengthPx": 1520,
+      "convergedAtStep": 12,
+      "finalCost": 0.003
+    },
+    "depth": {
+      "compressionIndex": 0.35
+    },
+    "exif": {
+      "focalLength": 6.86,
+      "focalLengthMM": 52,
+      "aperture": 1.8,
+      "iso": 100,
+      "exposureTime": 0.008,
+      "lensModel": "iPhone 15 Pro back cam 6.86mm f/1.78"
+    },
+    "focalLengthInfo": {
+      "focalLengthMM": 52,
+      "source": "exif",
+      "confidence": 0.95,
+      "lensType": "normal"
+    },
+    "estimatedDistance": 2.5,
+    "shoulderRatio": 0.28,
+    "shotType": "mediumShot",
+    "framing": {
+      "headroom": 0.12,
+      "optimalHeadroom": 0.1,
+      "headroomStatus": "optimal",
+      "leadRoom": 0.15,
+      "gazeDirection": "left",
+      "bodyCoverage": 0.48,
+      "camAngle": "eyeLevel", 
+      "camAngleValue": -2.1,
+      "croppingViolations": []
+    },
+    "compositionType": "ruleOfThirdsLeftUpper",
+    "silhouette": {
+      "silhouetteImage": "<CGImage binary>",
+      "frameRatio": 0.72,
+      "segmentationBackend": "MobileSAM",
+      "maskConfidence": 0.92
+    }
+  }
+}
