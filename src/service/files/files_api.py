@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from fastapi import APIRouter, Request, UploadFile, File, Form, HTTPException
-from fastapi.responses import FileResponse
 import orjson
 
 import src.common.common_codes as codes
@@ -9,11 +8,14 @@ from src.service.files import files_service
 from src.service.files.files_schema import FileListResponse
 
 router = APIRouter(prefix="/api/files", tags=["Files"])
-public_router = APIRouter(prefix="/files", tags=["Files Public"])
-
 
 @router.post("/upload", status_code=201)
-async def upload_file(request: Request, file: UploadFile = File(...), metadata: str | None = Form(None)):
+async def upload_file(
+    request: Request,
+    file: UploadFile = File(...),
+    folder: str = Form(..., description="Upload folder inside the bucket (e.g. profiles, reference)"),
+    metadata: str | None = Form(None),
+):
     ctx = request.app.state.ctx
 
     meta_dict = None
@@ -23,7 +25,7 @@ async def upload_file(request: Request, file: UploadFile = File(...), metadata: 
         except Exception:
             raise HTTPException(status_code=400, detail="metadata must be JSON string")
 
-    stored = files_service.save_file(ctx, file, meta_dict)
+    stored = await files_service.save_file(ctx, file, meta_dict, prefix=folder)
     return {"code": codes.ResponseStatus.SUCCESS["code"], "data": stored}
 
 
@@ -47,15 +49,16 @@ async def get_file_meta(file_id: str):
 @router.delete("/{file_id}")
 async def delete_file(request: Request, file_id: str):
     ctx = request.app.state.ctx
-    info = files_service.delete_file(ctx, file_id)
+    info = await files_service.delete_file(ctx, file_id)
     if not info:
         raise HTTPException(status_code=404, detail="file not found")
     return {"code": codes.ResponseStatus.SUCCESS["code"], "data": {"id": file_id}}
 
 
-@public_router.get("/{stored_name}")
-async def download_file(stored_name: str):
-    path = files_service.resolve_path_by_stored_name(stored_name)
-    if not path:
+@router.get("/{file_id}/presigned")
+async def get_presigned_url(request: Request, file_id: str):
+    ctx = request.app.state.ctx
+    url = await files_service.get_presigned_url(ctx, file_id)
+    if not url:
         raise HTTPException(status_code=404, detail="file not found")
-    return FileResponse(path)
+    return {"code": codes.ResponseStatus.SUCCESS["code"], "data": {"url": url}}
