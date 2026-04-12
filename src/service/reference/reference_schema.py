@@ -3,19 +3,19 @@ from typing import Any, Optional
 from pydantic import BaseModel, Field
 
 
-class ReferenceListRequest(BaseModel):
+class RefListRequest(BaseModel):
 	"""레퍼런스 이미지 목록 조회 요청 스키마"""
 	page: int = Field(1, ge=1, description="페이지 번호")
 	limit: int = Field(20, ge=1, le=100, description="페이지 크기")
 	ctgId: Optional[str] = Field(None, description="카테고리 ID")
 
 
-class ReferenceGetRequest(BaseModel):
+class RefGetRequest(BaseModel):
 	"""레퍼런스 이미지 상세 조회 요청 스키마"""
 	id: str = Field(..., description="이미지 ID")
 
 
-class ReferenceCreateRequest(BaseModel):
+class RefCreateRequest(BaseModel):
 	"""레퍼런스 이미지 등록 요청 스키마"""
 	userId: str = Field(..., description="등록 사용자 ID")
 	ctgId: str = Field(..., description="카테고리 ID")
@@ -28,7 +28,7 @@ class ReferenceCreateRequest(BaseModel):
 	pri: int = Field(0, description="우선순위")
 
 
-class ReferenceUpdateRequest(BaseModel):
+class RefUpdateRequest(BaseModel):
 	"""레퍼런스 이미지 수정 요청 스키마"""
 	id: str = Field(..., description="이미지 ID")
 	ctgId: Optional[str] = Field(None, description="카테고리 ID")
@@ -41,12 +41,12 @@ class ReferenceUpdateRequest(BaseModel):
 	pri: Optional[int] = Field(None, description="우선순위")
 
 
-class ReferenceDeleteRequest(BaseModel):
+class RefDeleteRequest(BaseModel):
 	"""레퍼런스 이미지 삭제 요청 스키마"""
 	id: str = Field(..., description="이미지 ID")
 
 
-class ReferenceListItem(BaseModel):
+class RefListItem(BaseModel):
 	"""레퍼런스 이미지 목록 아이템 스키마"""
 	id: str = Field(..., description="이미지 ID")
 	userId: str = Field(..., description="등록 사용자 ID")
@@ -67,7 +67,7 @@ class ReferenceListItem(BaseModel):
 		from_attributes = True
 
 
-class ReferenceResponse(BaseModel):
+class RefResponse(BaseModel):
 	"""레퍼런스 이미지 상세 응답 스키마"""
 	id: str = Field(..., description="이미지 ID")
 	userId: str = Field(..., description="등록 사용자 ID")
@@ -89,9 +89,9 @@ class ReferenceResponse(BaseModel):
 		from_attributes = True
 
 
-class ReferenceListResponse(BaseModel):
+class RefListResponse(BaseModel):
 	"""레퍼런스 이미지 목록 응답 스키마"""
-	items: list[ReferenceListItem]
+	items: list[RefListItem]
 	total: int = Field(..., description="전체 개수")
 	page: int = Field(..., description="현재 페이지")
 	limit: int = Field(..., description="페이지 크기")

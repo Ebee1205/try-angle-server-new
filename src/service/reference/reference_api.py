@@ -1,25 +1,55 @@
-from fastapi import APIRouter, Query, Request
+from fastapi import APIRouter, Request
 
 from src.service.reference import reference_service
-from src.service.reference.reference_schema import ReferenceListResponse, ReferenceResponse
+from src.service.reference.reference_schema import (
+	RefCreateRequest,
+	RefDeleteRequest,
+	RefGetRequest,
+	RefListRequest,
+	RefListResponse,
+	RefResponse,
+	RefUpdateRequest,
+)
 
-router = APIRouter(prefix="/api/reference", tags=["Reference"])
+router = APIRouter(prefix="/api/ref", tags=["Reference"])
 
 
-@router.get("", response_model=ReferenceListResponse)
-async def list_references(
-	request: Request,
-	page: int = Query(default=1, ge=1, description="페이지 번호"),
-	limit: int = Query(default=20, ge=1, le=100, description="페이지 크기"),
-):
+@router.post("/list", response_model=RefListResponse)
+async def list_references(request: Request, payload: RefListRequest):
 	"""레퍼런스 이미지 목록 조회"""
 	ctx = request.app.state.ctx
-	return reference_service.list_references(ctx, page=page, limit=limit)
+	return reference_service.list_references(
+		ctx,
+		page=payload.page,
+		limit=payload.limit,
+		ctg_id=payload.ctgId,
+	)
 
 
-@router.get("/{reference_id}", response_model=ReferenceResponse)
-async def get_reference(request: Request, reference_id: str):
+@router.post("/get", response_model=RefResponse)
+async def get_reference(request: Request, payload: RefGetRequest):
 	"""레퍼런스 이미지 상세 정보 조회"""
 	ctx = request.app.state.ctx
-	return reference_service.get_reference(ctx, reference_id)
+	return reference_service.get_reference(ctx, payload.id)
+
+
+@router.post("/create", response_model=RefResponse)
+async def create_reference(request: Request, payload: RefCreateRequest):
+	"""레퍼런스 이미지 등록"""
+	ctx = request.app.state.ctx
+	return reference_service.create_reference(ctx, payload)
+
+
+@router.post("/update", response_model=RefResponse)
+async def update_reference(request: Request, payload: RefUpdateRequest):
+	"""레퍼런스 이미지 수정"""
+	ctx = request.app.state.ctx
+	return reference_service.update_reference(ctx, payload)
+
+
+@router.post("/delete")
+async def delete_reference(request: Request, payload: RefDeleteRequest):
+	"""레퍼런스 이미지 삭제"""
+	ctx = request.app.state.ctx
+	return reference_service.delete_reference(ctx, payload.id)
 
