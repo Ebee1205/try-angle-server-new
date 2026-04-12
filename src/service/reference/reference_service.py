@@ -16,12 +16,20 @@ def _load_sample_ai_data() -> dict:
 
 def _get_sample_reference_base() -> dict:
 	return {
-		"url": "https://example.com/reference/hot1.jpg",
-		"title": "Sample Reference Image",
-		"desc": "테스트용 레퍼런스 이미지 상세 정보",
-		"category": "reference",
-		"u_date": SAMPLE_UNIX_TIMESTAMP,
-		"c_date": SAMPLE_UNIX_TIMESTAMP,
+		"id": "img-sample-001",
+		"userId": "user-sample-001",
+		"ctgId": "ctg-reference",
+		"imgUrl": "/legacy/hot1.jpg",
+		"title": "하이앵글 컵포즈",
+		"desc": "위에서 아래를 극단적으로 내려다보는 하이 앵글(High Angle)로 촬영하여, 얼굴을 가린 컵을 강조하고 신체 비율을 독특하게 왜곡한 구도입니다.",
+		"categoryName": "reference",
+		"useCnt": 0,
+		"kwd": ["K001", "K002"],
+		"aiDocId": "ai-doc-sample-001",
+		"expWeight": 0,
+		"pri": 0,
+		"cDate": SAMPLE_UNIX_TIMESTAMP,
+		"uDate": SAMPLE_UNIX_TIMESTAMP,
 	}
 
 
