@@ -166,19 +166,19 @@ class AppFactory:
         if hasattr(ctx, 'log') and ctx.log:
             ctx.log.info("     -- Shutting down application")
 
-        # Redis 종료
-        if hasattr(ctx, "redis_consumer") and ctx.redis_consumer:
-            try:
-                await ctx.redis_consumer.stop()
-                ctx.log.info("     -- RedisStreamConsumer stopped")
-            except Exception as e:
-                ctx.log.warning(f"     - RedisStreamConsumer stop failed: {e}")
-        if ctx.redis_handler:
-            try:
-                await ctx.redis_handler.disconnect()
-                ctx.log.info("     -- Redis handler closed")
-            except Exception as e:
-                ctx.log.warning(f"     - Redis close failed: {e}")
+        # # Redis 종료
+        # if hasattr(ctx, "redis_consumer") and ctx.redis_consumer:
+        #     try:
+        #         await ctx.redis_consumer.stop()
+        #         ctx.log.info("     -- RedisStreamConsumer stopped")
+        #     except Exception as e:
+        #         ctx.log.warning(f"     - RedisStreamConsumer stop failed: {e}")
+        # if ctx.redis_handler:
+        #     try:
+        #         await ctx.redis_handler.disconnect()
+        #         ctx.log.info("     -- Redis handler closed")
+        #     except Exception as e:
+        #         ctx.log.warning(f"     - Redis close failed: {e}")
 
         # WebSocket 종료
         if ctx.ws_handler:
