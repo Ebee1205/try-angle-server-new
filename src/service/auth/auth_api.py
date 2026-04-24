@@ -32,7 +32,7 @@ async def login(request: Request, login_req: UserLogin):
     로그인 API (JSON Body)
     """
     ctx = request.app.state.ctx
-    user = auth_service.authenticate_user(ctx, login_req.emailAddress, login_req.password)
+    user = auth_service.authenticate_user(ctx, login_req.email, login_req.password)
     if not user:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -42,7 +42,7 @@ async def login(request: Request, login_req: UserLogin):
     
     access_token = auth_service.create_access_token(
         ctx, 
-        data={"sub": user["emailAddress"], "role": user["role"]}
+        data={"sub": user["email"], "role": user["role"]}
     )
     return {"access_token": access_token, "token_type": "bearer"}
 
@@ -63,7 +63,7 @@ async def login_form(request: Request, form_data: OAuth2PasswordRequestForm = De
     
     access_token = auth_service.create_access_token(
         ctx, 
-        data={"sub": user["emailAddress"], "role": user["role"]}
+        data={"sub": user["email"], "role": user["role"]}
     )
     return {"access_token": access_token, "token_type": "bearer"}
 

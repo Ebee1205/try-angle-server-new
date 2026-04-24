@@ -13,10 +13,10 @@ class UserBase(BaseModel):
     """
     name: str = Field(..., description="이름")
     nickname: Optional[str] = Field(None, description="별명")
-    emailAddress: EmailStr = Field(..., description="이메일")
-    phoneNumber: Optional[str] = Field(None, description="핸드폰번호")
-    emailConfirm: str = Field("2", description="메일 주소 확인 여부 1: yes 2: no")
-    description: Optional[str] = Field(None, description="설명")
+    email: EmailStr = Field(..., description="이메일")
+    phone: Optional[str] = Field(None, description="핸드폰번호")
+    emailConf: str = Field("2", description="메일 주소 확인 여부 1: yes 2: no")
+    desc: Optional[str] = Field(None, description="설명")
     fileId: Optional[str] = Field(None, description="프로필 파일 아이디")
     extra: Dict[str, Any] = Field(default_factory=dict, description="부가정보")
 
@@ -42,8 +42,8 @@ class UserUpdate(BaseModel):
     """
     name: Optional[str] = None
     nickname: Optional[str] = None
-    phoneNumber: Optional[str] = None
-    description: Optional[str] = None
+    phone: Optional[str] = None
+    desc: Optional[str] = None
     fileId: Optional[str] = None
     extra: Optional[Dict[str, Any]] = None
 
@@ -52,7 +52,7 @@ class UserLogin(BaseModel):
     """
     이메일 로그인 요청 스키마
     """
-    emailAddress: EmailStr
+    email: EmailStr
     password: str
 
 

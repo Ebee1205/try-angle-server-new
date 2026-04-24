@@ -55,13 +55,13 @@ def get_user_by_email(ctx: AppContext, email: str) -> Optional[dict]:
             extra = _json.loads(extra)
         return {
             "id": row[0],
-            "emailAddress": row[1],
+            "email": row[1],
             "password": row[2],
             "name": row[3],
             "nickname": row[4],
-            "phoneNumber": row[5],
-            "emailConfirm": row[6],
-            "description": row[7],
+            "phone": row[5],
+            "emailConf": row[6],
+            "desc": row[7],
             "fileId": row[8],
             "role": row[9],
             "extra": extra,
@@ -75,7 +75,7 @@ def create_user(ctx: AppContext, user: UserCreate) -> dict:
          # DB 연결이 없을 경우 에러 처리 혹은 Mocking
         raise HTTPException(status_code=500, detail="Database not initialized")
 
-    existing = get_user_by_email(ctx, user.emailAddress)
+    existing = get_user_by_email(ctx, user.email)
     if existing:
         raise HTTPException(status_code=400, detail="Email already registered")
     
@@ -105,8 +105,8 @@ def create_user(ctx: AppContext, user: UserCreate) -> dict:
         ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
     """
     params = (
-        new_id, user.name, user.nickname, user.emailAddress, hashed_password,
-        user.phoneNumber, user.emailConfirm, user.description, user.fileId,
+        new_id, user.name, user.nickname, user.email, hashed_password,
+        user.phone, user.emailConf, user.desc, user.fileId,
         role.value, _json.dumps(extra, ensure_ascii=False), now, now
     )
 
@@ -122,7 +122,7 @@ def create_user(ctx: AppContext, user: UserCreate) -> dict:
 
     return {
         "id": new_id,
-        "emailAddress": user.emailAddress,
+        "email": user.email,
         "name": user.name,
         "nickname": user.nickname,
         "role": role,
