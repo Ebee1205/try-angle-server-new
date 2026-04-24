@@ -136,3 +136,70 @@ def authenticate_user(ctx: AppContext, email: str, password: str):
     if not verify_password(password, user["password"]):
         return False
     return user
+
+def check_user_exists(ctx: AppContext, userId: str) -> bool:
+    sql = "SELECT id FROM tb_user WHERE id = %s"
+    if not ctx.db_handler:
+        return False
+    rows = execute_query(ctx.db_handler, sql, (userId,))
+    return bool(rows)
+
+def check_email_exists(ctx: AppContext, email: str) -> bool:
+    sql = "SELECT id FROM tb_user WHERE email = %s"
+    if not ctx.db_handler:
+        return False
+    rows = execute_query(ctx.db_handler, sql, (email,))
+    return bool(rows)
+
+def update_user(ctx: AppContext, userId: str, data: dict) -> dict:
+    import json as _json
+    import time as _time
+    from src.service.auth.auth_schema import UserUpdateRequest
+
+    if ctx.db_handler is None:
+        raise HTTPException(status_code=500, detail="Database not initialized")
+
+    # 비밀번호 변경 처리
+    if data.get("passwordNew"):
+        if data.get("passwordNew") != data.get("passwordNewCheck"):
+            raise HTTPException(status_code=400, detail="New password mismatch")
+        currentUser = get_user_by_email(ctx, userId)  # userId로 먼저 조회
+        sql = "SELECT id, email, password FROM tb_user WHERE id = %s"
+        rows = execute_query(ctx.db_handler, sql, (userId,))
+        if not rows:
+            raise HTTPException(status_code=404, detail="User not found")
+        if data.get("password") and not verify_password(data["password"], rows[0][2]):
+            raise HTTPException(status_code=400, detail="Current password incorrect")
+        data["password"] = get_password_hash(data["passwordNew"])
+
+    fields = []
+    params = []
+    for key in ["name", "nickname", "phone", "desc", "fileId", "password"]:
+        if data.get(key) is not None:
+            colName = "`desc`" if key == "desc" else key
+            fields.append(f"{colName} = %s")
+            params.append(data[key])
+    if data.get("extra") is not None:
+        fields.append("extra = %s")
+        params.append(_json.dumps(data["extra"], ensure_ascii=False))
+
+    if not fields:
+        raise HTTPException(status_code=400, detail="No fields to update")
+
+    now = int(_time.time())
+    fields.append("uDate = %s")
+    params.append(now)
+    params.append(userId)
+
+    sql = f"UPDATE tb_user SET {', '.join(fields)} WHERE id = %s"
+    conn = ctx.db_handler.get_connection()
+    try:
+        with conn.cursor() as cursor:
+            cursor.execute(sql, params)
+            conn.commit()
+    except Exception as e:
+        conn.rollback()
+        ctx.log.error(f"Failed to update user: {e}")
+        raise HTTPException(status_code=500, detail="Failed to update user")
+
+    return {"id": userId, "updated": True}

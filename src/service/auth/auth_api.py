@@ -3,7 +3,7 @@ from fastapi.security import OAuth2PasswordRequestForm
 
 import src.common.common_codes as codes
 from src.service.auth import auth_service
-from src.service.auth.auth_schema import UserCreate, UserResponse, Token, UserLogin
+from src.service.auth.auth_schema import UserCreate, UserResponse, Token, UserLogin, UserExistsRequest, CheckEmailRequest, UserUpdateRequest
 from src.service.auth.jwt_auth import require_user
 
 router = APIRouter(prefix="/api/auth", tags=["Auth"])
@@ -73,3 +73,41 @@ async def readUsersMe(request: Request, user=Depends(require_user)):
     현재 사용자 정보 조회 (JWT 인증)
     """
     return user
+
+
+@router.post("/exists")
+async def checkExists(request: Request, body: UserExistsRequest):
+    """
+    사용자 ID 존재 여부 체크
+    """
+    ctx = request.app.state.ctx
+    exists = auth_service.check_user_exists(ctx, body.id)
+    return {"id": body.id, "exists": exists}
+
+
+@router.post("/checkEmail")
+async def checkEmail(request: Request, body: CheckEmailRequest):
+    """
+    이메일 유효성 및 중복 체크
+    """
+    ctx = request.app.state.ctx
+    exists = auth_service.check_email_exists(ctx, body.email)
+    return {"email": body.email, "exists": exists}
+
+
+@router.post("/logout")
+async def logout(user=Depends(require_user)):
+    """
+    로그아웃 (JWT는 stateless이므로 클라이언트에서 토큰 삭제)
+    """
+    return {"message": "Logged out successfully"}
+
+
+@router.post("/update")
+async def updateUser(request: Request, body: UserUpdateRequest, user=Depends(require_user)):
+    """
+    내 정보 수정 (JWT 인증)
+    """
+    ctx = request.app.state.ctx
+    result = auth_service.update_user(ctx, user["id"], body.model_dump(exclude_none=True))
+    return result

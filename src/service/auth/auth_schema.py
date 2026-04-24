@@ -82,3 +82,32 @@ class Token(BaseModel):
 
 class TokenData(BaseModel):
     email: Optional[str] = None
+
+
+class UserExistsRequest(BaseModel):
+    """
+    사용자 ID 존재 여부 체크 요청 스키마
+    """
+    id: str
+
+
+class CheckEmailRequest(BaseModel):
+    """
+    이메일 중복 체크 요청 스키마
+    """
+    email: EmailStr
+
+
+class UserUpdateRequest(BaseModel):
+    """
+    내 정보 수정 요청 스키마 (변경할 필드만 전달)
+    """
+    name: Optional[str] = None
+    nickname: Optional[str] = None
+    phone: Optional[str] = None
+    desc: Optional[str] = None
+    fileId: Optional[str] = None
+    extra: Optional[Dict[str, Any]] = None
+    password: Optional[str] = None
+    passwordNew: Optional[str] = None
+    passwordNewCheck: Optional[str] = None
