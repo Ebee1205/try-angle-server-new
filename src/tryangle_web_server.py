@@ -136,7 +136,7 @@ class AppFactory:
         """핸들러 초기화"""    
         ctx.log.info("     - Initializing handlers...")
         ctx._init_db()
-        ctx._init_mongodb()
+        # ctx._init_mongodb()
         ctx._init_websocket()
         ctx._init_rmq()
 
