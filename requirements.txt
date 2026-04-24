@@ -68,6 +68,7 @@ orjson
 packaging
 paho-mqtt
 pamqp
+passlib
 pathable
 pathlib
 pathvalidate
