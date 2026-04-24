@@ -4,7 +4,7 @@ from fastapi import APIRouter, Request, UploadFile, File, Form, HTTPException, D
 import orjson
 
 import src.common.common_codes as codes
-from src.service.auth.static_token_auth import require_user
+from src.service.auth.jwt_auth import require_user
 from src.service.files import files_service
 from src.service.files.files_schema import FileListResponse
 

@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, Request
 
-from src.service.auth.static_token_auth import require_user
+from src.service.auth.jwt_auth import require_user
 from src.service.reference import reference_service
 from src.service.reference.reference_schema import (
 	RefCreateRequest,

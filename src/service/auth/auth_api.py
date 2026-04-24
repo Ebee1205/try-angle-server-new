@@ -1,16 +1,12 @@
 from fastapi import APIRouter, Depends, HTTPException, status, Request
-from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
-from datetime import timedelta
+from fastapi.security import OAuth2PasswordRequestForm
 
 import src.common.common_codes as codes
 from src.service.auth import auth_service
 from src.service.auth.auth_schema import UserCreate, UserResponse, Token, UserLogin
-from src.service.auth.static_token_auth import require_user
+from src.service.auth.jwt_auth import require_user
 
 router = APIRouter(prefix="/api/auth", tags=["Auth"])
-
-# OAuth2 scheme for Swagger UI auth
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/auth/token")
 
 @router.post("/signup", response_model=UserResponse, status_code=201)
 async def signup(request: Request, user: UserCreate):
@@ -72,28 +68,8 @@ async def login_form(request: Request, form_data: OAuth2PasswordRequestForm = De
     return {"access_token": access_token, "token_type": "bearer"}
 
 @router.get("/me", response_model=UserResponse)
-async def read_users_me(request: Request, _=Depends(require_user)):
-# async def read_users_me(request: Request, token: str = Depends(oauth2_scheme)):
+async def read_users_me(request: Request, user=Depends(require_user)):
     """
-    현재 사용자 정보 조회 (정적 토큰 인증)
+    현재 사용자 정보 조회 (JWT 인증)
     """
-    ctx = request.app.state.ctx
-    # 정적 토큰은 특정 사용자와 1:1 매핑이 없으므로, 임시 사용자 정보를 반환합니다.
-    raise HTTPException(status_code=501, detail="Static token does not map to a real user. Use JWT login.")
-
-    # ctx = request.app.state.ctx
-    # # For now, just decode and find (simplification)
-    # import jwt
-    # try:
-    #     payload = jwt.decode(token, ctx.cfg.secret_key, algorithms=[auth_service.ALGORITHM])
-    #     email: str = payload.get("sub")
-    #     if email is None:
-    #          raise HTTPException(status_code=401, detail="Invalid token")
-    # except Exception:
-    #     raise HTTPException(status_code=401, detail="Could not validate credentials")
-        
-    # user = auth_service.get_user_by_email(ctx, email)
-    # if user is None:
-    #     raise HTTPException(status_code=404, detail="User not found")
-        
-    # return user
+    return user
