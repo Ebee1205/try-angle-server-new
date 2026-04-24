@@ -16,24 +16,24 @@ ALGORITHM = "HS256"
 def get_password_hash(password: str) -> str:
     return pwd_context.hash(password)
 
-def verify_password(plain_password: str, hashed_password: str) -> bool:
-    if not hashed_password:
+def verify_password(plainPassword: str, hashedPassword: str) -> bool:
+    if not hashedPassword:
         return False
-    return pwd_context.verify(plain_password, hashed_password)
+    return pwd_context.verify(plainPassword, hashedPassword)
 
-def create_access_token(ctx: AppContext, data: dict, expires_delta: Optional[timedelta] = None) -> str:
-    to_encode = data.copy()
-    if expires_delta:
-        expire = datetime.utcnow() + expires_delta
+def create_access_token(ctx: AppContext, data: dict, expiresDelta: Optional[timedelta] = None) -> str:
+    toEncode = data.copy()
+    if expiresDelta:
+        expire = datetime.utcnow() + expiresDelta
     else:
         # Default expiration from config
-        expire_minutes = getattr(ctx.cfg, "access_token_expire_minutes", 60)
-        expire = datetime.utcnow() + timedelta(minutes=expire_minutes)
+        expireMinutes = getattr(ctx.cfg, "access_token_expire_minutes", 60)
+        expire = datetime.utcnow() + timedelta(minutes=expireMinutes)
     
-    to_encode.update({"exp": expire})
-    secret_key = ctx.cfg.secret_key
-    encoded_jwt = jwt.encode(to_encode, secret_key, algorithm=ALGORITHM)
-    return encoded_jwt
+    toEncode.update({"exp": expire})
+    secretKey = ctx.cfg.secret_key
+    encodedJwt = jwt.encode(toEncode, secretKey, algorithm=ALGORITHM)
+    return encodedJwt
 
 def get_user_by_email(ctx: AppContext, email: str) -> Optional[dict]:
     # DB에서 사용자 조회
@@ -79,7 +79,7 @@ def create_user(ctx: AppContext, user: UserCreate) -> dict:
     if existing:
         raise HTTPException(status_code=400, detail="Email already registered")
     
-    hashed_password = get_password_hash(user.password) if user.password else None
+    hashedPassword = get_password_hash(user.password) if user.password else None
 
     # role 기본값 확인
     role = user.role if user.role else UserRole.CLIENT
@@ -96,7 +96,7 @@ def create_user(ctx: AppContext, user: UserCreate) -> dict:
         extra["providerId"] = user.providerId
 
     now = int(_time.time())
-    new_id = f"usr_{generate_task_id().replace('-', '')[:16]}"
+    newId = f"usr_{generate_task_id().replace('-', '')[:16]}"
 
     sql = """
         INSERT INTO tb_user (
@@ -105,7 +105,7 @@ def create_user(ctx: AppContext, user: UserCreate) -> dict:
         ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
     """
     params = (
-        new_id, user.name, user.nickname, user.email, hashed_password,
+        newId, user.name, user.nickname, user.email, hashedPassword,
         user.phone, user.emailConf, user.desc, user.fileId,
         role.value, _json.dumps(extra, ensure_ascii=False), now, now
     )
@@ -121,7 +121,7 @@ def create_user(ctx: AppContext, user: UserCreate) -> dict:
         raise HTTPException(status_code=500, detail="Failed to create user")
 
     return {
-        "id": new_id,
+        "id": newId,
         "email": user.email,
         "name": user.name,
         "nickname": user.nickname,

@@ -23,16 +23,16 @@ async def signup(request: Request, user: UserCreate):
                 detail="Password match failed"
             )
 
-    new_user = auth_service.create_user(ctx, user)
-    return new_user
+    newUser = auth_service.create_user(ctx, user)
+    return newUser
 
 @router.post("/login", response_model=Token)
-async def login(request: Request, login_req: UserLogin):
+async def login(request: Request, loginReq: UserLogin):
     """
     로그인 API (JSON Body)
     """
     ctx = request.app.state.ctx
-    user = auth_service.authenticate_user(ctx, login_req.email, login_req.password)
+    user = auth_service.authenticate_user(ctx, loginReq.email, loginReq.password)
     if not user:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -40,20 +40,20 @@ async def login(request: Request, login_req: UserLogin):
             headers={"WWW-Authenticate": "Bearer"},
         )
     
-    access_token = auth_service.create_access_token(
+    accessToken = auth_service.create_access_token(
         ctx, 
         data={"sub": user["email"], "role": user["role"]}
     )
-    return {"access_token": access_token, "token_type": "bearer"}
+    return {"accessToken": accessToken, "tokenType": "bearer"}
 
 
 @router.post("/token", response_model=Token)
-async def login_form(request: Request, form_data: OAuth2PasswordRequestForm = Depends()):
+async def loginForm(request: Request, formData: OAuth2PasswordRequestForm = Depends()):
     """
     Swagger UI용 로그인 API (Form Data)
     """
     ctx = request.app.state.ctx
-    user = auth_service.authenticate_user(ctx, form_data.username, form_data.password)
+    user = auth_service.authenticate_user(ctx, formData.username, formData.password)
     if not user:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -61,14 +61,14 @@ async def login_form(request: Request, form_data: OAuth2PasswordRequestForm = De
             headers={"WWW-Authenticate": "Bearer"},
         )
     
-    access_token = auth_service.create_access_token(
+    accessToken = auth_service.create_access_token(
         ctx, 
         data={"sub": user["email"], "role": user["role"]}
     )
-    return {"access_token": access_token, "token_type": "bearer"}
+    return {"accessToken": accessToken, "tokenType": "bearer"}
 
 @router.get("/me", response_model=UserResponse)
-async def read_users_me(request: Request, user=Depends(require_user)):
+async def readUsersMe(request: Request, user=Depends(require_user)):
     """
     현재 사용자 정보 조회 (JWT 인증)
     """
