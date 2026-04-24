@@ -219,7 +219,7 @@ class AppContext:
         
         self.log.debug("- end init RedisStreamConsumer")
         
-    def _init_db(self):
+    def _init_db(self) -> None:
         self.log.debug("+ start init DB")
 
         if not self.cfg.db:
@@ -229,6 +229,9 @@ class AppContext:
         db_config = self.cfg.db.dict()
         self.db_handler = DBHandler(db_config)
         self.db_handler.init_connection()
+
+        from src.utils.db_init import init_db_if_needed
+        init_db_if_needed(self.db_handler, self.log)
 
         self.log.debug("- end init DB")
         
