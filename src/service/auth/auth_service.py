@@ -1,12 +1,12 @@
 from datetime import datetime, timedelta
 from typing import Optional
 import jwt  # Using PyJWT or python-jose
-from fastapi import HTTPException, status
+from fastapi import HTTPException
 from passlib.context import CryptContext
 
 from src.app_context import AppContext
 from src.utils.db_utils import execute_query
-from src.service.auth.auth_schema import UserCreate, UserRole, TokenData, UserResponse
+from src.service.auth.auth_schema import UserCreate, UserRole
 
 # 비밀번호 해싱 설정
 pwd_context = CryptContext(schemes=["pbkdf2_sha256"], deprecated="auto")
