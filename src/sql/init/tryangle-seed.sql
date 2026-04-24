@@ -11,9 +11,9 @@ START TRANSACTION;
 
 -- 1. 사용자 시드 데이터 (기존 유지)
 INSERT INTO tb_user (id, email, password, name, nickname, phone, emailConf, `desc`, role, cDate, uDate) VALUES
-('usr_001', '2025tryangle@gmail.com', 'smwhg2025!', '트라이앵글', '슈퍼어드민', '010-0000-0000', '1', '시스템 최고 관리자입니다.', 'SUPER_ADMIN', 1712966400, 1712966400),
-('usr_002', 'admin@email.com', 'admin', '트라이앵글어드민', '관리자', '010-1111-1111', '1', '서비스 운영 관리자입니다.', 'ADMIN', 1712966400, 1712966400),
-('usr_003', 'guest@email.com', 'guest', '김예공', '게스트', '010-2222-2222', '1', '일반 사용자입니다.', 'CLIENT', 1712966400, 1712966400);
+('usr_001', '2025tryangle@gmail.com', '$pbkdf2-sha256$29000$SmlNCYGQktI6R.idc.699w$iTbohqKsrbnrNkebpBY8BR2mPGc95ffLQ/j0WrfFKKA', '트라이앵글', '슈퍼어드민', '010-0000-0000', '1', '시스템 최고 관리자입니다.', 'SUPER_ADMIN', 1712966400, 1712966400),
+('usr_002', 'admin@email.com', '$pbkdf2-sha256$29000$OAcAwLiXUkrpXYsxBgBgTA$gHlq3/zq1jPN7H8qp5bJ5dzvs/Kru9zKgd0yDRn9d1k', '트라이앵글어드민', '관리자', '010-1111-1111', '1', '서비스 운영 관리자입니다.', 'ADMIN', 1712966400, 1712966400),
+('usr_003', 'guest@email.com', '$pbkdf2-sha256$29000$9V4L4RyDkBLCWGtNqTXmPA$Nm4eoUup./ecGYMV4CUqQTur4rXIjjMyURnubaFQ0gs', '김예공', '게스트', '010-2222-2222', '1', '일반 사용자입니다.', 'CLIENT', 1712966400, 1712966400);
 
 -- 2. 태그 시드 데이터
 
