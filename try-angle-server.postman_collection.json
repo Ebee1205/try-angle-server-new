@@ -1,0 +1,751 @@
+{
+  "info": {
+    "_postman_id": "try-angle-server-collection",
+    "name": "Try-Angle Server API",
+    "description": "Try-Angle 서버 API 테스트 컬렉션",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8000",
+      "type": "string"
+    },
+    {
+      "key": "accessToken",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "Basic",
+      "item": [
+        {
+          "name": "Ping",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/basic/ping",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "basic", "ping"]
+            },
+            "description": "서버 상태 확인"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Signup",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"홍길동\",\n  \"nickname\": \"gildong\",\n  \"email\": \"test@example.com\",\n  \"phone\": \"010-1234-5678\",\n  \"emailConf\": \"2\",\n  \"desc\": \"테스트 사용자\",\n  \"fileId\": null,\n  \"extra\": {},\n  \"provider\": \"email\",\n  \"providerId\": null,\n  \"role\": \"CLIENT\",\n  \"password\": \"password123!\",\n  \"passwordCheck\": \"password123!\",\n  \"agreeTerms\": true\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/signup",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "signup"]
+            },
+            "description": "회원가입 API"
+          }
+        },
+        {
+          "name": "Login (JSON)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var json = pm.response.json();",
+                  "if (json.accessToken) {",
+                  "    pm.collectionVariables.set('accessToken', json.accessToken);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"admin@email.com\",\n  \"password\": \"admin\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "login"]
+            },
+            "description": "로그인 API (JSON Body) - JWT access_token을 컬렉션 변수에 자동 저장"
+          }
+        },
+        {
+          "name": "Login (Form / Swagger UI)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var json = pm.response.json();",
+                  "if (json.accessToken) {",
+                  "    pm.collectionVariables.set('accessToken', json.accessToken);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "username",
+                  "value": "admin@email.com",
+                  "type": "text"
+                },
+                {
+                  "key": "password",
+                  "value": "admin",
+                  "type": "text"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/token",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "token"]
+            },
+            "description": "로그인 API (Form Data) - JWT access_token을 컬렉션 변수에 자동 저장"
+          }
+        },
+        {
+          "name": "Get Me",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/me",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "me"]
+            },
+            "description": "현재 사용자 정보 조회 (JWT 인증 필요)"
+          }
+        },
+        {
+          "name": "Check Exists",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id\": \"YOUR_USER_ID\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/exists",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "exists"]
+            },
+            "description": "사용자 ID 존재 여부 체크"
+          }
+        },
+        {
+          "name": "Check Email",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"test@example.com\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/checkEmail",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "checkEmail"]
+            },
+            "description": "가입 이메일 유효성 및 중복 체크"
+          }
+        },
+        {
+          "name": "Logout",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/logout",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "logout"]
+            },
+            "description": "로그아웃 (JWT 인증 필요)"
+          }
+        },
+        {
+          "name": "Update Me",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nickname\": \"새닉네임\",\n  \"phone\": \"010-9999-8888\",\n  \"desc\": \"수정된 자기소개\",\n  \"fileId\": null,\n  \"extra\": {}\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/update",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "update"]
+            },
+            "description": "내 정보 수정 (JWT 인증 필요). 비밀번호 변경 시 password, passwordNew, passwordNewCheck 추가 전달"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Files",
+      "item": [
+        {
+          "name": "Upload File",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": ""
+                },
+                {
+                  "key": "folder",
+                  "value": "profiles",
+                  "type": "text",
+                  "description": "Upload folder (e.g. profiles, reference)"
+                },
+                {
+                  "key": "metadata",
+                  "value": "{\"description\": \"테스트 파일\"}",
+                  "type": "text",
+                  "description": "Optional JSON metadata string"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/files/upload",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "files", "upload"]
+            },
+            "description": "파일 업로드 (multipart/form-data)"
+          }
+        },
+        {
+          "name": "List All Files",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/files",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "files"]
+            },
+            "description": "파일 목록 조회"
+          }
+        },
+        {
+          "name": "Get File Meta",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/files/:file_id",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "files", ":file_id"],
+              "variable": [
+                {
+                  "key": "file_id",
+                  "value": "YOUR_FILE_ID"
+                }
+              ]
+            },
+            "description": "특정 파일 메타 정보 조회"
+          }
+        },
+        {
+          "name": "Get Presigned URL",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/files/:file_id/presigned",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "files", ":file_id", "presigned"],
+              "variable": [
+                {
+                  "key": "file_id",
+                  "value": "YOUR_FILE_ID"
+                }
+              ]
+            },
+            "description": "파일 Presigned URL 조회 (S3)"
+          }
+        },
+        {
+          "name": "Delete File",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/files/:file_id",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "files", ":file_id"],
+              "variable": [
+                {
+                  "key": "file_id",
+                  "value": "YOUR_FILE_ID"
+                }
+              ]
+            },
+            "description": "파일 삭제"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Reference",
+      "item": [
+        {
+          "name": "List References",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"page\": 1,\n  \"limit\": 20,\n  \"ctgId\": null\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/ref/list",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "ref", "list"]
+            },
+            "description": "레퍼런스 이미지 목록 조회"
+          }
+        },
+        {
+          "name": "Get Reference",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id\": \"YOUR_REFERENCE_ID\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/ref/get",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "ref", "get"]
+            },
+            "description": "레퍼런스 이미지 상세 정보 조회"
+          }
+        },
+        {
+          "name": "Create Reference",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"userId\": \"USER_ID\",\n  \"ctgId\": \"CATEGORY_ID\",\n  \"imgUrl\": \"https://example.com/image.jpg\",\n  \"title\": \"레퍼런스 이미지 제목\",\n  \"desc\": \"이미지 설명\",\n  \"kwd\": [\"keyword1\", \"keyword2\"],\n  \"aiDocId\": null,\n  \"expWeight\": 0,\n  \"pri\": 0\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/ref/create",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "ref", "create"]
+            },
+            "description": "레퍼런스 이미지 등록"
+          }
+        },
+        {
+          "name": "Update Reference",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id\": \"YOUR_REFERENCE_ID\",\n  \"title\": \"수정된 제목\",\n  \"desc\": \"수정된 설명\",\n  \"ctgId\": null,\n  \"imgUrl\": null,\n  \"kwd\": null,\n  \"aiDocId\": null,\n  \"expWeight\": null,\n  \"pri\": null\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/ref/update",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "ref", "update"]
+            },
+            "description": "레퍼런스 이미지 수정 (변경할 필드만 전달)"
+          }
+        },
+        {
+          "name": "Delete Reference",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id\": \"YOUR_REFERENCE_ID\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/ref/delete",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "ref", "delete"]
+            },
+            "description": "레퍼런스 이미지 삭제"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Tag",
+      "item": [
+        {
+          "name": "List Tags",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"page\": 1,\n  \"limit\": 20,\n  \"parentCode\": null\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/tag/list",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "tag", "list"]
+            },
+            "description": "태그 목록 조회. parentCode로 하위 태그 필터링 가능"
+          }
+        },
+        {
+          "name": "Get Tag",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id\": \"YOUR_TAG_ID\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/tag/get",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "tag", "get"]
+            },
+            "description": "태그 상세 조회"
+          }
+        },
+        {
+          "name": "Create Tag",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"userId\": \"usr_001\",\n  \"parentCode\": \"SHOT_ROOT\",\n  \"code\": \"SHOT_NEW\",\n  \"tagName\": \"새 샷타입\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/tag/create",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "tag", "create"]
+            },
+            "description": "태그 생성. parentCode 없으면 루트 태그"
+          }
+        },
+        {
+          "name": "Update Tag",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id\": \"YOUR_TAG_ID\",\n  \"parentCode\": null,\n  \"tagName\": \"수정된 태그명\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/tag/update",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "tag", "update"]
+            },
+            "description": "태그 수정 (변경할 필드만 전달)"
+          }
+        },
+        {
+          "name": "Delete Tag",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id\": \"YOUR_TAG_ID\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/tag/delete",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "tag", "delete"]
+            },
+            "description": "태그 삭제"
+          }
+        }
+      ]
+    },
+    {
+      "name": "System",
+      "item": [
+        {
+          "name": "Send Log (Simulation)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"level\": \"WARNING\",\n  \"service\": \"web-client\",\n  \"duration\": 1.0\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/system/log",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "system", "log"]
+            },
+            "description": "클라이언트 로그 수신 후 RabbitMQ로 전송 (Thermal 이벤트 시뮬레이션)"
+          }
+        },
+        {
+          "name": "Search Logs",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/system/search?start_time=1700000000000&end_time=1800000000000&service=web-client&level=WARNING&limit=100",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "system", "search"],
+              "query": [
+                {
+                  "key": "start_time",
+                  "value": "1700000000000",
+                  "description": "시작 시간 (ms timestamp)"
+                },
+                {
+                  "key": "end_time",
+                  "value": "1800000000000",
+                  "description": "종료 시간 (ms timestamp)"
+                },
+                {
+                  "key": "service",
+                  "value": "web-client",
+                  "description": "서비스명 (optional)"
+                },
+                {
+                  "key": "level",
+                  "value": "WARNING",
+                  "description": "로그 레벨 (optional)"
+                },
+                {
+                  "key": "limit",
+                  "value": "100",
+                  "description": "최대 조회 수"
+                }
+              ]
+            },
+            "description": "MongoDB에서 특정 시간 범위의 로그 검색"
+          }
+        }
+      ]
+    }
+  ],
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{accessToken}}",
+        "type": "string"
+      }
+    ]
+  }
+}
