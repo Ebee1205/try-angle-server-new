@@ -15,17 +15,20 @@ INSERT INTO tb_user (id, email, password, name, nickname, phone, emailConf, `des
 ('usr_002', 'admin@email.com', '$pbkdf2-sha256$29000$OAcAwLiXUkrpXYsxBgBgTA$gHlq3/zq1jPN7H8qp5bJ5dzvs/Kru9zKgd0yDRn9d1k', '트라이앵글어드민', '관리자', '010-1111-1111', '1', '서비스 운영 관리자입니다.', 'ADMIN', 1712966400, 1712966400),
 ('usr_003', 'guest@email.com', '$pbkdf2-sha256$29000$9V4L4RyDkBLCWGtNqTXmPA$Nm4eoUup./ecGYMV4CUqQTur4rXIjjMyURnubaFQ0gs', '김예공', '게스트', '010-2222-2222', '1', '일반 사용자입니다.', 'CLIENT', 1712966400, 1712966400);
 
--- 2. 태그 시드 데이터
+
+-- 2. 이미지 카테고리 시드 데이터
 
 -- [SHOT: 샷타입]
-INSERT INTO tb_tag (id, userId, parentCode, code, tagName, cDate, uDate) VALUES
-('tag_100', 'usr_001', NULL, 'SHOT_ROOT', '샷타입', 1712966400, 1712966400),
-('tag_101', 'usr_001', 'SHOT_ROOT', 'SHOT_FULL', '전신', 1712966400, 1712966400),
-('tag_102', 'usr_001', 'SHOT_ROOT', 'SHOT_UPPER', '상체 중심', 1712966400, 1712966400),
-('tag_103', 'usr_001', 'SHOT_ROOT', 'SHOT_LOWER', '하체 중심', 1712966400, 1712966400),
-('tag_104', 'usr_001', 'SHOT_ROOT', 'SHOT_SELFIE', '셀카', 1712966400, 1712966400),
-('tag_105', 'usr_001', 'SHOT_ROOT', 'SHOT_SELFMODE', '내찍사', 1712966400, 1712966400),
-('tag_106', 'usr_001', 'SHOT_ROOT', 'SHOT_TAKEFORME', '남찍사', 1712966400, 1712966400);
+INSERT INTO tb_img_ctg (id, name, cDate, uDate) VALUES
+('ctg_full', '전신', 1712966400, 1712966400),
+('ctg_upper', '상체 중심', 1712966400, 1712966400),
+('ctg_lower', '하체 중심', 1712966400, 1712966400),
+('ctg_selfie', '셀카', 1712966400, 1712966400),
+('ctg_selfmode', '내찍사', 1712966400, 1712966400),
+('ctg_takeforme', '남찍사', 1712966400, 1712966400);
+
+
+-- 3. 태그 시드 데이터
 
 -- [MOOD: 분위기]
 INSERT INTO tb_tag (id, userId, parentCode, code, tagName, cDate, uDate) VALUES
