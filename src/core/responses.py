@@ -52,7 +52,11 @@ def build_response_body(status: ResponseStatus, data=None):
         "data": jsonable_encoder(data) if data is not None else {},
     }
 
-# 에러 응답용 헬퍼 (전역 핸들러에서 사용)
+def build_success_response(data):
+    """성공 응답 전용 헬퍼"""
+    return build_response_body(ResponseStatus.SUCCESS, data)
+
 def build_error_response(http_code: int, data=None):
+    """에러 응답 전용 헬퍼"""
     status_obj = ResponseStatus.from_http_code(http_code)
     return build_response_body(status_obj, data)
