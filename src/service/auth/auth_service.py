@@ -87,7 +87,7 @@ def create_user(ctx: AppContext, user: UserCreate) -> dict:
     # provider/providerId는 extra JSON에 저장
     import json as _json
     import time as _time
-    from src.common.id_generator import generate_task_id
+    from src.core.id_generator import generate_task_id
 
     extra = dict(user.extra) if user.extra else {}
     if user.provider and user.provider != "email":

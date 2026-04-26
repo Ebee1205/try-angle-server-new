@@ -16,7 +16,7 @@ import asyncio
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from src.app_context import AppContext
-from src.common.common_codes import build_error_response
+from src.core.responses import build_error_response
 
 from src.service.basic.basic_api import router as basic_router
 from src.service.reference.reference_api import router as reference_router

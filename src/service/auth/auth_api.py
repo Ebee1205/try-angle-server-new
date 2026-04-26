@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, status, Request
 from fastapi.security import OAuth2PasswordRequestForm
 
-import src.common.common_codes as codes
+import src.core.responses as codes
 from src.service.auth import auth_service
 from src.service.auth.auth_schema import UserCreate, UserResponse, Token, UserLogin, UserExistsRequest, CheckEmailRequest, UserUpdateRequest
 from src.service.auth.jwt_auth import require_user

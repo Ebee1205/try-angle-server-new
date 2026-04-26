@@ -3,7 +3,7 @@ import time
 from fastapi import HTTPException
 
 from src.app_context import AppContext
-from src.common.id_generator import generate_task_id
+from src.core.id_generator import generate_task_id
 from src.utils.db_utils import execute_query
 from src.service.tag.tag_schema import (
 	TagCreateRequest,

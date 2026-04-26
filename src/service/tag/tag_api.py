@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, Request
 
-from src.common.common_codes import build_success_response
+from src.core.responses import build_success_response
 
 from src.service.auth.jwt_auth import require_user
 from src.service.tag import tag_service

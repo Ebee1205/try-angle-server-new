@@ -9,7 +9,7 @@ from src.service.ctg.ctg_schema import (
     CtgListRequest,
     CtgUpdateRequest,
 )
-from src.common.common_codes import build_success_response
+from src.core.responses import build_success_response
 
 router = APIRouter(prefix="/api/ctg", tags=["Category"])
 
