@@ -6,13 +6,17 @@
 """
 
 # main.py
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
+from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 from contextlib import asynccontextmanager
 import traceback
 import asyncio
+from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from src.app_context import AppContext
+from src.common.common_codes import build_error_response
 
 from src.service.basic.basic_api import router as basic_router
 from src.service.reference.reference_api import router as reference_router
@@ -70,6 +74,9 @@ class AppFactory:
 
         # CORS 설정
         AppFactory._setup_cors(app, ctx)
+
+        # 예외 핸들러 등록
+        AppFactory._register_exception_handlers(app)
         
         # 라우터 등록
         AppFactory._register_routes(app)
@@ -88,6 +95,43 @@ class AppFactory:
             allow_headers=cors_config.allow_headers,
         )
         print(f"CORS configuration complete: {cors_config.allow_origins}")
+
+    @staticmethod
+    def _register_exception_handlers(app: FastAPI) -> None:
+        """FastAPI 공식 가이드 기반 전역 예외 핸들러 등록"""
+
+        @app.exception_handler(StarletteHTTPException)
+        async def http_exception_handler(request: Request, exc: StarletteHTTPException):
+            # 401, 404 등 HTTP 기반 예외 발생 시 호출됨
+            return JSONResponse(
+                status_code=exc.status_code,
+                content=build_error_response(exc.status_code),
+            )
+
+        @app.exception_handler(RequestValidationError)
+        async def validation_exception_handler(request: Request, exc: RequestValidationError):
+            ctx = getattr(request.app.state, "ctx", None)
+            if ctx and getattr(ctx, "log", None):
+                ctx.log.warning(f"Request validation failed: {exc.errors()}")
+
+            # 유효성 검사 실패는 보통 400 Bad Request로 처리
+            # 필요 시 exc.errors()를 data 인자로 넘겨 상세 에러를 포함할 수 있음
+            return JSONResponse(
+                status_code=400,
+                content=build_error_response(400, data={"detail": exc.errors()}),
+            )
+
+        @app.exception_handler(Exception)
+        async def unhandled_exception_handler(request: Request, exc: Exception):
+            ctx = getattr(request.app.state, "ctx", None)
+            if ctx and getattr(ctx, "log", None):
+                ctx.log.error(f"Unhandled exception: {str(exc)}")
+
+            # 예상치 못한 모든 서버 에러는 500 처리
+            return JSONResponse(
+                status_code=500,
+                content=build_error_response(500),
+            )
     
     @staticmethod
     def _register_routes(app: FastAPI) -> None:
