@@ -1,14 +1,14 @@
 from fastapi import APIRouter, Depends, HTTPException, status, Request
 from fastapi.security import OAuth2PasswordRequestForm
 
-import src.core.responses as codes
+from src.core.responses import build_response_body, build_success_response, ResponseStatus
 from src.service.auth import auth_service
-from src.service.auth.auth_schema import UserCreate, UserResponse, Token, UserLogin, UserExistsRequest, CheckEmailRequest, UserUpdateRequest
+from src.service.auth.auth_schema import UserCreate, UserLogin, UserExistsRequest, CheckEmailRequest, UserUpdateRequest
 from src.service.auth.jwt_auth import require_user
 
 router = APIRouter(prefix="/api/auth", tags=["Auth"])
 
-@router.post("/signup", response_model=UserResponse, status_code=201)
+@router.post("/signup", status_code=201)
 async def signup(request: Request, user: UserCreate):
     """
     회원가입 API
@@ -24,9 +24,9 @@ async def signup(request: Request, user: UserCreate):
             )
 
     newUser = auth_service.create_user(ctx, user)
-    return newUser
+    return build_response_body(ResponseStatus.CREATED, newUser)
 
-@router.post("/login", response_model=Token)
+@router.post("/login")
 async def login(request: Request, loginReq: UserLogin):
     """
     로그인 API (JSON Body)
@@ -44,10 +44,10 @@ async def login(request: Request, loginReq: UserLogin):
         ctx, 
         data={"sub": user["email"], "role": user["role"]}
     )
-    return {"accessToken": accessToken, "tokenType": "bearer"}
+    return build_success_response({"accessToken": accessToken, "tokenType": "bearer"})
 
 
-@router.post("/token", response_model=Token)
+@router.post("/token")
 async def loginForm(request: Request, formData: OAuth2PasswordRequestForm = Depends()):
     """
     Swagger UI용 로그인 API (Form Data)
@@ -65,14 +65,14 @@ async def loginForm(request: Request, formData: OAuth2PasswordRequestForm = Depe
         ctx, 
         data={"sub": user["email"], "role": user["role"]}
     )
-    return {"accessToken": accessToken, "tokenType": "bearer"}
+    return build_success_response({"accessToken": accessToken, "tokenType": "bearer"})
 
-@router.get("/me", response_model=UserResponse)
+@router.get("/me")
 async def readUsersMe(request: Request, user=Depends(require_user)):
     """
     현재 사용자 정보 조회 (JWT 인증)
     """
-    return user
+    return build_success_response(user)
 
 
 @router.post("/exists")
@@ -82,7 +82,7 @@ async def checkExists(request: Request, body: UserExistsRequest):
     """
     ctx = request.app.state.ctx
     exists = auth_service.check_user_exists(ctx, body.id)
-    return {"id": body.id, "exists": exists}
+    return build_success_response({"id": body.id, "exists": exists})
 
 
 @router.post("/checkEmail")
@@ -92,7 +92,7 @@ async def checkEmail(request: Request, body: CheckEmailRequest):
     """
     ctx = request.app.state.ctx
     exists = auth_service.check_email_exists(ctx, body.email)
-    return {"email": body.email, "exists": exists}
+    return build_success_response({"email": body.email, "exists": exists})
 
 
 @router.post("/logout")
@@ -100,7 +100,7 @@ async def logout(user=Depends(require_user)):
     """
     로그아웃 (JWT는 stateless이므로 클라이언트에서 토큰 삭제)
     """
-    return {"message": "Logged out successfully"}
+    return build_success_response({"message": "Logged out successfully"})
 
 
 @router.post("/update")
@@ -110,4 +110,4 @@ async def updateUser(request: Request, body: UserUpdateRequest, user=Depends(req
     """
     ctx = request.app.state.ctx
     result = auth_service.update_user(ctx, user["id"], body.model_dump(exclude_none=True))
-    return result
+    return build_success_response(result)

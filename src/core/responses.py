@@ -3,9 +3,6 @@ from enum import Enum
 from fastapi import status as http_status # FastAPI 표준 코드 사용
 from fastapi.encoders import jsonable_encoder
 
-from enum import Enum
-from fastapi import status as http_status
-
 class ResponseStatus(Enum):
     # --- Success (2xx) ---
     SUCCESS            = (http_status.HTTP_200_OK,                  "S0000", "성공")
