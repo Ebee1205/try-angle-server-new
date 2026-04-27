@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import datetime
+import time
 from pathlib import Path
 from typing import Dict, Optional, Any
 import threading
@@ -68,17 +68,18 @@ async def save_file(ctx, file: UploadFile, meta: Optional[Dict[str, Any]] = None
 
     base_url = (r2_cfg.public_base_url or "").rstrip("/")
     public_url = f"{base_url}/{key}"
+    now = int(time.time())
 
     metadata = FileMetadata(
-        id=file_id,
-        filename=safe_name,
-        stored_name=key,
-        path=key,
+        fileId=file_id,
+        fileName=safe_name,
+        fileKey=key,
         url=public_url,
         size=len(data),
-        content_type=content_type,
+        contentType=content_type,
         meta=meta or {},
-        created_at=datetime.utcnow(),
+        cDate=now,
+        uDate=now,
     )
 
     with _STORE_LOCK:
@@ -99,7 +100,7 @@ async def delete_file(ctx, file_id: str) -> Optional[FileMetadata]:
         async with _r2_client(ctx) as client:
             await client.delete_object(
                 Bucket=ctx.cfg.r2.bucket_name,
-                Key=info.stored_name,
+                Key=info.fileKey,
             )
     except Exception as e:
         ctx.log.warning(f"Failed to delete from R2 | id={file_id} | err={e}")
@@ -128,7 +129,7 @@ async def get_presigned_url(ctx, file_id: str) -> Optional[str]:
     async with _r2_client(ctx) as client:
         url = await client.generate_presigned_url(
             "get_object",
-            Params={"Bucket": r2_cfg.bucket_name, "Key": info.stored_name},
+            Params={"Bucket": r2_cfg.bucket_name, "Key": info.fileKey},
             ExpiresIn=r2_cfg.upload_url_expire_seconds,
         )
     return url

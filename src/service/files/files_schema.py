@@ -1,4 +1,3 @@
-from datetime import datetime
 from typing import Any, Dict, Optional
 
 from pydantic import BaseModel, Field
@@ -16,17 +15,21 @@ ALLOWED_FOLDERS = {"profiles", "reference"}
 
 
 class FileMetadata(BaseModel):
-    id: str
-    filename: str
-    stored_name: str
-    path: str
+    fileId: str
+    fileName: str
+    fileKey: str
     url: str
     size: int
-    content_type: Optional[str] = None
+    contentType: Optional[str] = None
     meta: Dict[str, Any] = Field(default_factory=dict)
-    created_at: datetime
+    cDate: int
+    uDate: int
 
 
 class FileListResponse(BaseModel):
     files: list[FileMetadata]
     total: int
+
+
+class FileIdRequest(BaseModel):
+    fileId: str = Field(..., description="파일 ID")
