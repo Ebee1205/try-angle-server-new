@@ -8,8 +8,8 @@ from src.service.basic import basic_service
 
 # 라우터 등록은 여기서 하고 실제 로직은 service에서 관리
 # http://localhost:8000/
-# GET /api/basic/ping
-router = APIRouter(prefix="/api/basic", tags=["Basic"])
+# GET /ping
+router = APIRouter(tags=["Basic"])
 
 @router.get("/ping")
 async def ping(request: Request):

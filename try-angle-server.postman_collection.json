@@ -27,9 +27,9 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/api/basic/ping",
+              "raw": "{{baseUrl}}/ping",
               "host": ["{{baseUrl}}"],
-              "path": ["api", "basic", "ping"]
+              "path": ["ping"]
             },
             "description": "서버 상태 확인"
           }
