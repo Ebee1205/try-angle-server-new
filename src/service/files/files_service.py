@@ -56,7 +56,8 @@ async def save_file(ctx, file: UploadFile, meta: Optional[Dict[str, Any]] = None
         )
     file_id = uuid.uuid4().hex
     safe_name = Path(file.filename or "upload.bin").name
-    key = f"{folder}/{file_id}_{safe_name}"
+    ext = Path(safe_name).suffix.lower()
+    key = f"{folder}/trg_{time.strftime('%Y%m%d_%H%M%S', time.gmtime())}_{uuid.uuid4().hex[:8]}{ext}"
 
     async with _r2_client(ctx) as client:
         await client.put_object(

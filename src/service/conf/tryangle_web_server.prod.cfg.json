@@ -46,7 +46,7 @@
     },
 
     "r2": {
-      "account_id": "your-cloudflare-account-id",
+      "account_id": "tryangle-images",
       "bucket_name": "tryangle-images",
       "region": "auto",
       "endpoint_url": "https://2a9b33fa7ea08ae491598e555233bddb.r2.cloudflarestorage.com",
