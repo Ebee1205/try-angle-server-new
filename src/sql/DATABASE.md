@@ -1,4 +1,4 @@
-# TryAngle 데이터베이스 설계 명세서 (v1.1.0)
+# TryAngle 데이터베이스 설계 명세서 (v1.2.0)
 
 본 문서는 TryAngle 서비스의 RDBMS(PostgreSQL/MySQL 등) 스키마를 정의합니다. 이미지 분석 결과와 시스템 로그 일부는 noneSQL DB 및 Cloudflare R2에 분산 저장되며, 본 DB는 사용자, 레퍼런스 이미지, 태그, 촬영 세션, 결과물 메타데이터와 이들 간의 관계를 관리합니다.
 
@@ -11,6 +11,7 @@
     * 매핑 테이블: `mtb_{name}`
     * 생성일/수정일: `cDate` / `uDate`
 * **Role Enum:** `SUPER_ADMIN`, `ADMIN`, `CLIENT`
+* **Primary Key Strategy:** 선택된 초기 SQL 기준으로 각 테이블 PK는 `BIGINT AUTO_INCREMENT`를 사용합니다.
 
 ---
 
@@ -21,7 +22,7 @@
 
 | 컬럼명 | 타입 | 제약사항 | 설명 |
 | :--- | :--- | :--- | :--- |
-| **id** | varchar | PK | 사용자 고유 식별자 |
+| **id** | bigint | PK, Auto Increment | 사용자 고유 식별자 |
 | **email** | varchar | Unique, Not Null | 로그인 이메일 |
 | **password** | varchar | - | 암호화된 비밀번호 |
 | **name** | varchar | - | 실명 |
@@ -40,7 +41,7 @@
 
 | 컬럼명 | 타입 | 제약사항 | 설명 |
 | :--- | :--- | :--- | :--- |
-| **id** | varchar | PK | 카테고리 고유 식별자 |
+| **id** | bigint | PK, Auto Increment | 카테고리 고유 식별자 |
 | **name** | varchar | Not Null | 카테고리 명칭 |
 | **cDate** | bigint | - | 생성일 (Unix Timestamp) |
 | **uDate** | bigint | - | 수정일 (Unix Timestamp) |
@@ -50,9 +51,9 @@
 
 | 컬럼명 | 타입 | 제약사항 | 설명 |
 | :--- | :--- | :--- | :--- |
-| **id** | varchar | PK | 이미지 고유 식별자 |
-| **userId** | varchar | FK (`tb_user.id`) | 등록 관리자 ID |
-| **ctgId** | varchar | FK (`tb_img_ctg.id`) | 카테고리 ID |
+| **id** | bigint | PK, Auto Increment | 이미지 고유 식별자 |
+| **userId** | bigint | FK (`tb_user.id`) | 등록 관리자 ID |
+| **ctgId** | bigint | FK (`tb_img_ctg.id`) | 카테고리 ID |
 | **imgUrl** | varchar | Not Null | 레퍼런스 이미지 경로 |
 | **title** | varchar | - | 이미지 제목 |
 | **desc** | text | - | 이미지 설명 |
@@ -69,8 +70,8 @@
 
 | 컬럼명 | 타입 | 제약사항 | 설명 |
 | :--- | :--- | :--- | :--- |
-| **id** | varchar | PK | 태그 고유 식별자 |
-| **userId** | varchar | FK (`tb_user.id`) | 태그 생성자 ID |
+| **id** | bigint | PK, Auto Increment | 태그 고유 식별자 |
+| **userId** | bigint | FK (`tb_user.id`) | 태그 생성자 ID |
 | **parentCode** | varchar | - | 상위 태그 코드 |
 | **code** | varchar | Unique | 태그 식별 코드 |
 | **tagName** | varchar | Not Null | 태그 표시 명칭 |
@@ -82,9 +83,9 @@
 
 | 컬럼명 | 타입 | 제약사항 | 설명 |
 | :--- | :--- | :--- | :--- |
-| **id** | varchar | PK | 세션 고유 식별자 |
-| **userId** | varchar | FK (`tb_user.id`) | 세션 사용자 ID |
-| **imgId** | varchar | FK (`tb_img.id`) | 참조한 레퍼런스 이미지 ID |
+| **id** | bigint | PK, Auto Increment | 세션 고유 식별자 |
+| **userId** | bigint | FK (`tb_user.id`) | 세션 사용자 ID |
+| **imgId** | bigint | FK (`tb_img.id`) | 참조한 레퍼런스 이미지 ID |
 | **sDate** | bigint | - | 시작 시간 (Unix Timestamp) |
 | **eDate** | bigint | - | 종료 시간 (Unix Timestamp) |
 | **device** | json | - | 모델명, OS, 성능 정보 등 디바이스 메타데이터 |
@@ -99,10 +100,10 @@
 
 | 컬럼명 | 타입 | 제약사항 | 설명 |
 | :--- | :--- | :--- | :--- |
-| **id** | varchar | PK | 스냅 고유 식별자 |
-| **userId** | varchar | FK (`tb_user.id`) | 촬영 유저 ID |
-| **imgId** | varchar | FK (`tb_img.id`) | 참조한 레퍼런스 이미지 ID |
-| **sId** | varchar | FK (`tb_session.id`) | 연결된 촬영 세션 ID |
+| **id** | bigint | PK, Auto Increment | 스냅 고유 식별자 |
+| **userId** | bigint | FK (`tb_user.id`) | 촬영 유저 ID |
+| **imgId** | bigint | FK (`tb_img.id`) | 참조한 레퍼런스 이미지 ID |
+| **sId** | bigint | FK (`tb_session.id`) | 연결된 촬영 세션 ID |
 | **snapUrl** | varchar | Not Null | 촬영된 이미지 경로 |
 | **comment** | text | - | 후기 내용 |
 | **gender** | varchar(1) | - | 성별 (`M`, `F`) |
@@ -121,9 +122,9 @@
 
 | 컬럼명 | 타입 | 제약사항 | 설명 |
 | :--- | :--- | :--- | :--- |
-| **id** | varchar | PK | 매핑 고유 ID |
-| **userId** | varchar | FK (`tb_user.id`) | 북마크한 사용자 ID |
-| **imgId** | varchar | FK (`tb_img.id`) | 북마크한 레퍼런스 이미지 ID |
+| **id** | bigint | PK, Auto Increment | 매핑 고유 ID |
+| **userId** | bigint | FK (`tb_user.id`) | 북마크한 사용자 ID |
+| **imgId** | bigint | FK (`tb_img.id`) | 북마크한 레퍼런스 이미지 ID |
 | **cDate** | bigint | - | 북마크 일시 (Unix Timestamp) |
 
 ### 3.2 이미지-태그 매핑 (`mtb_img_tag`)
@@ -131,9 +132,9 @@
 
 | 컬럼명 | 타입 | 제약사항 | 설명 |
 | :--- | :--- | :--- | :--- |
-| **id** | varchar | PK | 매핑 고유 ID |
-| **imgId** | varchar | FK (`tb_img.id`) | 대상 이미지 ID |
-| **tagId** | varchar | FK (`tb_tag.id`) | 연결된 태그 ID |
+| **id** | bigint | PK, Auto Increment | 매핑 고유 ID |
+| **imgId** | bigint | FK (`tb_img.id`) | 대상 이미지 ID |
+| **tagId** | bigint | FK (`tb_tag.id`) | 연결된 태그 ID |
 
 * **Unique Index:** `(imgId, tagId)` 조합은 중복될 수 없습니다.
 
@@ -163,3 +164,4 @@
 3. **데이터 무결성:** `tb_user`, `tb_img`, `tb_session` 삭제 시 `mtb_bookmark`, `mtb_img_tag`, `tb_snap`에 대한 Cascade 또는 Soft Delete 정책을 별도로 결정해야 합니다.
 4. **성능 최적화:** `tb_img`의 `useCnt`, `expWeight`, `pri`, `tb_snap`의 `viewCnt`, `tb_session`의 `sStat`, `sDate`는 조회 패턴에 따라 보조 인덱스 검토가 필요합니다.
 5. **상태값 관리:** `tb_user.emailConf`, `tb_session.sStat`, `tb_snap.gender`는 애플리케이션 레벨 enum 또는 DB 제약으로 일관성 있게 관리하는 것을 권장합니다.
+6. **전환 주의사항:** 현재 애플리케이션 API/서비스 레이어는 문자열 ID 생성 로직을 일부 사용 중입니다. 본 문서와 초기 SQL만 우선 `AUTO_INCREMENT` 기준으로 변경했으므로, 서비스 코드 변경 전까지는 런타임 호환성에 주의해야 합니다.
