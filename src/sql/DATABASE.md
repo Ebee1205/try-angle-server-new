@@ -165,3 +165,13 @@
 4. **성능 최적화:** `tb_img`의 `useCnt`, `expWeight`, `pri`, `tb_snap`의 `viewCnt`, `tb_session`의 `sStat`, `sDate`는 조회 패턴에 따라 보조 인덱스 검토가 필요합니다.
 5. **상태값 관리:** `tb_user.emailConf`, `tb_session.sStat`, `tb_snap.gender`는 애플리케이션 레벨 enum 또는 DB 제약으로 일관성 있게 관리하는 것을 권장합니다.
 6. **전환 주의사항:** 현재 애플리케이션 API/서비스 레이어는 문자열 ID 생성 로직을 일부 사용 중입니다. 본 문서와 초기 SQL만 우선 `AUTO_INCREMENT` 기준으로 변경했으므로, 서비스 코드 변경 전까지는 런타임 호환성에 주의해야 합니다.
+
+
+## 6. Cloudflare R2 폴더 구조 정의서 (tryangle-images)
+| 폴더명 | 용도 | DB 매핑 필드 | 파일명 예시 (Example) |
+| :--- | :--- | :--- | :--- |
+| `profiles/` | 사용자 프로필 이미지 | `tb_user.fileId` | `p_user123_1714730400.jpg` |
+| `reference/` | 시스템 가이드용 레퍼런스 | `tb_img.imgUrl` | `ref_img99_1714730400.png` |
+| `snaps/` | 유저 촬영 결과물 (스냅) | `tb_snap.snapUrl` | `2026/05/snap_sId_1714730400.webp` |
+| `temp/` | 업로드 중 임시 저장 | - | `tmp_upload_777888.jpg` |
+| `legacy/` | 구버전 마이그레이션 데이터 | - | `old_profile_01.png` |
