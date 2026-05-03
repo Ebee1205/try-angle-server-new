@@ -14,9 +14,9 @@ router = APIRouter(prefix="/api/files", tags=["Files"])
 async def create_file(
     request: Request,
     file: UploadFile = File(...),
-    folder: str = Form(..., description="Upload folder inside the bucket (e.g. profiles, reference)"),
+    uploadType: str = Form(..., alias="type", description="Upload type (profile, reference, snap, temp)"),
     metadata: str | None = Form(None),
-    _=Depends(require_user),
+    user=Depends(require_user),
 ):
     ctx = request.app.state.ctx
 
@@ -27,7 +27,13 @@ async def create_file(
         except Exception:
             raise HTTPException(status_code=400, detail="metadata must be JSON string")
 
-    stored = await files_service.save_file(ctx, file, meta_dict, prefix=folder)
+    stored = await files_service.save_file(
+        ctx,
+        file,
+        meta_dict,
+        upload_type=uploadType,
+        user_id=user.get("id"),
+    )
     return build_success_response(stored)
 
 

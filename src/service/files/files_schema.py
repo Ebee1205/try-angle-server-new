@@ -1,5 +1,4 @@
 from typing import Any, Dict, Optional
-
 from pydantic import BaseModel, Field
 
 
@@ -11,8 +10,28 @@ ALLOWED_CONTENT_TYPES = {
     "image/webp",
     "image/bmp",
 }
-ALLOWED_FOLDERS = {"profiles", "reference"}
 
+UPLOAD_CONFIG = {
+    "profile": {
+        "path": "profiles/",
+        "prefix": "p_",
+    },
+    "reference": {
+        "path": "reference/",
+        "prefix": "ref_",
+    },
+    "snap": {
+        "path": "snaps/",  # 여기에 YYYY/MM은 동적으로 추가
+        "prefix": "snap_",
+        "useDatePath": True,
+    },
+    "temp": {
+        "path": "temp/",
+        "prefix": "tmp_",
+    },
+}
+
+ALLOWED_UPLOAD_TYPES = set(UPLOAD_CONFIG.keys())
 
 class FileMetadata(BaseModel):
     fileId: str

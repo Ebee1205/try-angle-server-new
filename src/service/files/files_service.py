@@ -9,7 +9,13 @@ import uuid
 import aioboto3
 from fastapi import UploadFile, HTTPException
 
-from src.service.files.files_schema import FileMetadata, IMAGE_MAX_BYTES, ALLOWED_CONTENT_TYPES, ALLOWED_FOLDERS
+from src.service.files.files_schema import (
+    FileMetadata,
+    IMAGE_MAX_BYTES,
+    ALLOWED_CONTENT_TYPES,
+    ALLOWED_UPLOAD_TYPES,
+    UPLOAD_CONFIG,
+)
 
 
 _STORE: Dict[str, FileMetadata] = {}
@@ -28,7 +34,13 @@ def _r2_client(ctx):
     )
 
 
-async def save_file(ctx, file: UploadFile, meta: Optional[Dict[str, Any]] = None, prefix: Optional[str] = None) -> FileMetadata:
+async def save_file(
+    ctx,
+    file: UploadFile,
+    meta: Optional[Dict[str, Any]] = None,
+    upload_type: Optional[str] = None,
+    user_id: Optional[int] = None,
+) -> FileMetadata:
     # --- 유효성 검사 ---
     content_type = file.content_type or ""
     if content_type not in ALLOWED_CONTENT_TYPES:
@@ -46,18 +58,38 @@ async def save_file(ctx, file: UploadFile, meta: Optional[Dict[str, Any]] = None
 
     # --- R2 업로드 ---
     r2_cfg = ctx.cfg.r2
-    if not prefix:
-        raise HTTPException(status_code=400, detail="'prefix' (upload folder) is required")
-    folder = prefix.strip("/")
-    if folder not in ALLOWED_FOLDERS:
+    if not upload_type:
+        raise HTTPException(status_code=400, detail="'type' is required")
+
+    upload_type = upload_type.strip().lower()
+    if upload_type not in ALLOWED_UPLOAD_TYPES:
         raise HTTPException(
             status_code=400,
-            detail=f"Invalid folder '{folder}'. Allowed: {sorted(ALLOWED_FOLDERS)}",
+            detail=f"Invalid type '{upload_type}'. Allowed: {sorted(ALLOWED_UPLOAD_TYPES)}",
         )
+
+    upload_cfg = UPLOAD_CONFIG[upload_type]
+    folder = upload_cfg["path"].strip("/")
     file_id = uuid.uuid4().hex
     safe_name = Path(file.filename or "upload.bin").name
     ext = Path(safe_name).suffix.lower()
-    key = f"{folder}/trg_{time.strftime('%Y%m%d_%H%M%S', time.gmtime())}_{uuid.uuid4().hex[:8]}{ext}"
+    if not ext:
+        ext = ".bin"
+
+    now = int(time.time())
+    tm = time.gmtime(now)
+
+    if upload_cfg.get("useDatePath"):
+        folder = f"{folder}/{tm.tm_year}/{tm.tm_mon:02d}"
+
+    if upload_type == "snap":
+        if user_id is None:
+            raise HTTPException(status_code=400, detail="user id is required for this upload type")
+        id_part = f"u{user_id}"
+    else:
+        id_part = uuid.uuid4().hex[:8]
+
+    key = f"{folder}/{upload_cfg['prefix']}{id_part}_{now}{ext}"
 
     async with _r2_client(ctx) as client:
         await client.put_object(
@@ -69,7 +101,6 @@ async def save_file(ctx, file: UploadFile, meta: Optional[Dict[str, Any]] = None
 
     base_url = (r2_cfg.public_base_url or "").rstrip("/")
     public_url = f"{base_url}/{key}"
-    now = int(time.time())
 
     metadata = FileMetadata(
         fileId=file_id,
