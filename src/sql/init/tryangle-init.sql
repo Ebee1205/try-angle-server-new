@@ -75,6 +75,54 @@ CREATE TABLE IF NOT EXISTS tb_img (
 		ON DELETE RESTRICT ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
+CREATE TABLE IF NOT EXISTS tb_session (
+	id VARCHAR(64) NOT NULL,
+	userId VARCHAR(64) NOT NULL,
+	imgId VARCHAR(64) NOT NULL,
+	sDate BIGINT NOT NULL,
+	eDate BIGINT NULL,
+	device JSON NULL,
+	sStat VARCHAR(20) NOT NULL DEFAULT 'READY',
+	cDate BIGINT NOT NULL,
+	uDate BIGINT NOT NULL,
+	PRIMARY KEY (id),
+	KEY idx_tb_session_userId (userId),
+	KEY idx_tb_session_imgId (imgId),
+	KEY idx_tb_session_status_date (sStat, sDate),
+	CONSTRAINT fk_tb_session_userId FOREIGN KEY (userId) REFERENCES tb_user (id)
+		ON DELETE RESTRICT ON UPDATE CASCADE,
+	CONSTRAINT fk_tb_session_imgId FOREIGN KEY (imgId) REFERENCES tb_img (id)
+		ON DELETE RESTRICT ON UPDATE CASCADE,
+	CONSTRAINT ck_tb_session_sStat CHECK (sStat IN ('READY', 'COMPLETED', 'FAILED'))
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+CREATE TABLE IF NOT EXISTS tb_snap (
+	id VARCHAR(64) NOT NULL,
+	userId VARCHAR(64) NOT NULL,
+	imgId VARCHAR(64) NOT NULL,
+	sId VARCHAR(64) NULL,
+	snapUrl VARCHAR(2048) NOT NULL,
+	comment TEXT NULL,
+	gender VARCHAR(1) NULL,
+	userH FLOAT NULL,
+	userW FLOAT NULL,
+	viewCnt INT NOT NULL DEFAULT 0,
+	cDate BIGINT NOT NULL,
+	uDate BIGINT NOT NULL,
+	PRIMARY KEY (id),
+	KEY idx_tb_snap_userId (userId),
+	KEY idx_tb_snap_imgId (imgId),
+	KEY idx_tb_snap_sId (sId),
+	KEY idx_tb_snap_viewCnt (viewCnt),
+	CONSTRAINT fk_tb_snap_userId FOREIGN KEY (userId) REFERENCES tb_user (id)
+		ON DELETE RESTRICT ON UPDATE CASCADE,
+	CONSTRAINT fk_tb_snap_imgId FOREIGN KEY (imgId) REFERENCES tb_img (id)
+		ON DELETE RESTRICT ON UPDATE CASCADE,
+	CONSTRAINT fk_tb_snap_sId FOREIGN KEY (sId) REFERENCES tb_session (id)
+		ON DELETE SET NULL ON UPDATE CASCADE,
+	CONSTRAINT ck_tb_snap_gender CHECK (gender IS NULL OR gender IN ('M', 'F'))
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
 CREATE TABLE IF NOT EXISTS mtb_bookmark (
 	id VARCHAR(64) NOT NULL,
 	userId VARCHAR(64) NOT NULL,
