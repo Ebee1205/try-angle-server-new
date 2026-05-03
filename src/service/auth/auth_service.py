@@ -87,8 +87,6 @@ def create_user(ctx: AppContext, user: UserCreate) -> dict:
     # provider/providerId는 extra JSON에 저장
     import json as _json
     import time as _time
-    from src.core.id_generator import generate_task_id
-
     extra = dict(user.extra) if user.extra else {}
     if user.provider and user.provider != "email":
         extra["provider"] = user.provider
@@ -96,24 +94,25 @@ def create_user(ctx: AppContext, user: UserCreate) -> dict:
         extra["providerId"] = user.providerId
 
     now = int(_time.time())
-    newId = f"usr_{generate_task_id().replace('-', '')[:16]}"
 
     sql = """
         INSERT INTO tb_user (
-            id, name, nickname, email, password, phone,
+            name, nickname, email, password, phone,
             emailConf, `desc`, fileId, role, extra, cDate, uDate
-        ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+        ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
     """
     params = (
-        newId, user.name, user.nickname, user.email, hashedPassword,
+        user.name, user.nickname, user.email, hashedPassword,
         user.phone, user.emailConf, user.desc, user.fileId,
         role.value, _json.dumps(extra, ensure_ascii=False), now, now
     )
 
     conn = ctx.db_handler.get_connection()
+    new_id: int | None = None
     try:
         with conn.cursor() as cursor:
             cursor.execute(sql, params)
+            new_id = cursor.lastrowid
             conn.commit()
     except Exception as e:
         conn.rollback()
@@ -121,7 +120,7 @@ def create_user(ctx: AppContext, user: UserCreate) -> dict:
         raise HTTPException(status_code=500, detail="Failed to create user")
 
     return {
-        "id": newId,
+        "id": new_id,
         "email": user.email,
         "name": user.name,
         "nickname": user.nickname,
@@ -137,7 +136,7 @@ def authenticate_user(ctx: AppContext, email: str, password: str):
         return False
     return user
 
-def check_user_exists(ctx: AppContext, userId: str) -> bool:
+def check_user_exists(ctx: AppContext, userId: int) -> bool:
     sql = "SELECT id FROM tb_user WHERE id = %s"
     if not ctx.db_handler:
         return False
@@ -151,11 +150,9 @@ def check_email_exists(ctx: AppContext, email: str) -> bool:
     rows = execute_query(ctx.db_handler, sql, (email,))
     return bool(rows)
 
-def update_user(ctx: AppContext, userId: str, data: dict) -> dict:
+def update_user(ctx: AppContext, userId: int, data: dict) -> dict:
     import json as _json
     import time as _time
-    from src.service.auth.auth_schema import UserUpdateRequest
-
     if ctx.db_handler is None:
         raise HTTPException(status_code=500, detail="Database not initialized")
 
@@ -163,7 +160,6 @@ def update_user(ctx: AppContext, userId: str, data: dict) -> dict:
     if data.get("passwordNew"):
         if data.get("passwordNew") != data.get("passwordNewCheck"):
             raise HTTPException(status_code=400, detail="New password mismatch")
-        currentUser = get_user_by_email(ctx, userId)  # userId로 먼저 조회
         sql = "SELECT id, email, password FROM tb_user WHERE id = %s"
         rows = execute_query(ctx.db_handler, sql, (userId,))
         if not rows:

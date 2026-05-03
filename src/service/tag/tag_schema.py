@@ -12,12 +12,12 @@ class TagListRequest(BaseModel):
 
 class TagGetRequest(BaseModel):
 	"""태그 상세 조회 요청 스키마"""
-	id: str = Field(..., description="태그 ID")
+	id: int = Field(..., description="태그 ID")
 
 
 class TagCreateRequest(BaseModel):
 	"""태그 생성 요청 스키마"""
-	userId: str = Field(..., description="태그 생성자 ID")
+	userId: int = Field(..., description="태그 생성자 ID")
 	parentCode: Optional[str] = Field(None, description="상위 태그 코드")
 	code: str = Field(..., description="태그 식별 코드")
 	tagName: str = Field(..., description="태그 표시 명칭")
@@ -25,20 +25,20 @@ class TagCreateRequest(BaseModel):
 
 class TagUpdateRequest(BaseModel):
 	"""태그 수정 요청 스키마"""
-	id: str = Field(..., description="태그 ID")
+	id: int = Field(..., description="태그 ID")
 	parentCode: Optional[str] = Field(None, description="상위 태그 코드")
 	tagName: Optional[str] = Field(None, description="태그 표시 명칭")
 
 
 class TagDeleteRequest(BaseModel):
 	"""태그 삭제 요청 스키마"""
-	id: str = Field(..., description="태그 ID")
+	id: int = Field(..., description="태그 ID")
 
 
 class TagItem(BaseModel):
 	"""태그 아이템 스키마"""
-	id: str = Field(..., description="태그 ID")
-	userId: str = Field(..., description="태그 생성자 ID")
+	id: int = Field(..., description="태그 ID")
+	userId: int = Field(..., description="태그 생성자 ID")
 	parentCode: Optional[str] = Field(None, description="상위 태그 코드")
 	code: str = Field(..., description="태그 식별 코드")
 	tagName: str = Field(..., description="태그 표시 명칭")

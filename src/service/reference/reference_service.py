@@ -22,9 +22,9 @@ def _load_sample_ai_data() -> dict:
 
 def _get_sample_reference_base() -> dict:
 	return {
-		"id": "img-sample-001",
-		"userId": "user-sample-001",
-		"ctgId": "ctg-reference",
+		"id": 1,
+		"userId": 1,
+		"ctgId": 1,
 		"imgUrl": "/legacy/hot1.jpg",
 		"title": "하이앵글 컵포즈",
 		"desc": "위에서 아래를 극단적으로 내려다보는 하이 앵글(High Angle)로 촬영하여, 얼굴을 가린 컵을 강조하고 신체 비율을 독특하게 왜곡한 구도입니다.",
@@ -43,7 +43,7 @@ def list_references(
 	ctx: AppContext,
 	page: int = 1,
 	limit: int = 20,
-	ctg_id: str | None = None,
+	ctg_id: int | None = None,
 ) -> RefListResponse:
 	"""테스트용 레퍼런스 이미지 목록 조회"""
 	if ctx.log:
@@ -66,7 +66,7 @@ def list_references(
 	)
 
 
-def get_reference(ctx: AppContext, reference_id: str) -> RefResponse:
+def get_reference(ctx: AppContext, reference_id: int) -> RefResponse:
 	"""테스트용 레퍼런스 이미지 상세 정보 조회"""
 	if ctx.log:
 		ctx.log.debug(f"Ref requested | reference_id={reference_id}")
@@ -128,7 +128,7 @@ def update_reference(ctx: AppContext, payload: RefUpdateRequest) -> RefResponse:
 	return RefResponse(**base, ai_data=_load_sample_ai_data())
 
 
-def delete_reference(ctx: AppContext, reference_id: str) -> dict:
+def delete_reference(ctx: AppContext, reference_id: int) -> dict:
 	"""테스트용 레퍼런스 이미지 삭제"""
 	if ctx.log:
 		ctx.log.debug(f"Ref delete requested | id={reference_id}")

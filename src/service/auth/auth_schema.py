@@ -68,7 +68,7 @@ class UserResponse(UserBase):
     """
     회원정보 응답 스키마
     """
-    id: str
+    id: int
     # password는 제외됨
 
     class Config:
@@ -88,7 +88,7 @@ class UserExistsRequest(BaseModel):
     """
     사용자 ID 존재 여부 체크 요청 스키마
     """
-    id: str
+    id: int
 
 
 class CheckEmailRequest(BaseModel):

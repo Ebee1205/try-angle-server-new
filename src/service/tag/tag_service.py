@@ -3,7 +3,6 @@ import time
 from fastapi import HTTPException
 
 from src.app_context import AppContext
-from src.core.id_generator import generate_task_id
 from src.utils.db_utils import execute_query
 from src.service.tag.tag_schema import (
 	TagCreateRequest,
@@ -71,7 +70,7 @@ def list_tags(
 	return TagListResponse(items=items, total=total, page=page, limit=limit)
 
 
-def get_tag(ctx: AppContext, tag_id: str) -> TagItem:
+def get_tag(ctx: AppContext, tag_id: int) -> TagItem:
 	"""태그 상세 조회"""
 	if ctx.log:
 		ctx.log.debug(f"Tag get requested | tag_id={tag_id}")
@@ -111,18 +110,19 @@ def create_tag(ctx: AppContext, payload: TagCreateRequest) -> TagItem:
 			raise HTTPException(status_code=400, detail="Parent tag code not found")
 
 	now = int(time.time())
-	new_id = f"tag_{generate_task_id().replace('-', '')[:16]}"
 
 	sql = """
-		INSERT INTO tb_tag (id, userId, parentCode, code, tagName, cDate, uDate)
-		VALUES (%s, %s, %s, %s, %s, %s, %s)
+		INSERT INTO tb_tag (userId, parentCode, code, tagName, cDate, uDate)
+		VALUES (%s, %s, %s, %s, %s, %s)
 	"""
-	params = (new_id, payload.userId, payload.parentCode, payload.code, payload.tagName, now, now)
+	params = (payload.userId, payload.parentCode, payload.code, payload.tagName, now, now)
 
 	conn = ctx.db_handler.get_connection()
+	new_id: int | None = None
 	try:
 		with conn.cursor() as cursor:
 			cursor.execute(sql, params)
+			new_id = cursor.lastrowid
 		conn.commit()
 	except Exception as e:
 		conn.rollback()
@@ -198,9 +198,7 @@ def update_tag(ctx: AppContext, payload: TagUpdateRequest) -> TagItem:
 		(payload.id,),
 	)
 	return _row_to_tag_item(updated_rows[0])
-
-
-def delete_tag(ctx: AppContext, tag_id: str) -> dict:
+def delete_tag(ctx: AppContext, tag_id: int) -> dict:
 	"""태그 삭제"""
 	if ctx.log:
 		ctx.log.debug(f"Tag delete requested | tag_id={tag_id}")

@@ -7,18 +7,18 @@ class RefListRequest(BaseModel):
 	"""레퍼런스 이미지 목록 조회 요청 스키마"""
 	page: int = Field(1, ge=1, description="페이지 번호")
 	limit: int = Field(20, ge=1, le=100, description="페이지 크기")
-	ctgId: Optional[str] = Field(None, description="카테고리 ID")
+	ctgId: Optional[int] = Field(None, description="카테고리 ID")
 
 
 class RefGetRequest(BaseModel):
 	"""레퍼런스 이미지 상세 조회 요청 스키마"""
-	id: str = Field(..., description="이미지 ID")
+	id: int = Field(..., description="이미지 ID")
 
 
 class RefCreateRequest(BaseModel):
 	"""레퍼런스 이미지 등록 요청 스키마"""
-	userId: str = Field(..., description="등록 사용자 ID")
-	ctgId: str = Field(..., description="카테고리 ID")
+	userId: int = Field(..., description="등록 사용자 ID")
+	ctgId: int = Field(..., description="카테고리 ID")
 	imgUrl: str = Field(..., description="이미지 URL")
 	title: Optional[str] = Field(None, description="이미지 제목")
 	desc: Optional[str] = Field(None, description="이미지 설명")
@@ -30,8 +30,8 @@ class RefCreateRequest(BaseModel):
 
 class RefUpdateRequest(BaseModel):
 	"""레퍼런스 이미지 수정 요청 스키마"""
-	id: str = Field(..., description="이미지 ID")
-	ctgId: Optional[str] = Field(None, description="카테고리 ID")
+	id: int = Field(..., description="이미지 ID")
+	ctgId: Optional[int] = Field(None, description="카테고리 ID")
 	imgUrl: Optional[str] = Field(None, description="이미지 URL")
 	title: Optional[str] = Field(None, description="이미지 제목")
 	desc: Optional[str] = Field(None, description="이미지 설명")
@@ -43,14 +43,14 @@ class RefUpdateRequest(BaseModel):
 
 class RefDeleteRequest(BaseModel):
 	"""레퍼런스 이미지 삭제 요청 스키마"""
-	id: str = Field(..., description="이미지 ID")
+	id: int = Field(..., description="이미지 ID")
 
 
 class RefListItem(BaseModel):
 	"""레퍼런스 이미지 목록 아이템 스키마"""
-	id: str = Field(..., description="이미지 ID")
-	userId: str = Field(..., description="등록 사용자 ID")
-	ctgId: str = Field(..., description="카테고리 ID")
+	id: int = Field(..., description="이미지 ID")
+	userId: int = Field(..., description="등록 사용자 ID")
+	ctgId: int = Field(..., description="카테고리 ID")
 	imgUrl: str = Field(..., description="이미지 URL")
 	title: str = Field(..., description="이미지 제목")
 	desc: Optional[str] = Field(None, description="이미지 설명")
@@ -69,9 +69,9 @@ class RefListItem(BaseModel):
 
 class RefResponse(BaseModel):
 	"""레퍼런스 이미지 상세 응답 스키마"""
-	id: str = Field(..., description="이미지 ID")
-	userId: str = Field(..., description="등록 사용자 ID")
-	ctgId: str = Field(..., description="카테고리 ID")
+	id: int = Field(..., description="이미지 ID")
+	userId: int = Field(..., description="등록 사용자 ID")
+	ctgId: int = Field(..., description="카테고리 ID")
 	imgUrl: str = Field(..., description="이미지 URL")
 	title: str = Field(..., description="이미지 제목")
 	desc: Optional[str] = Field(None, description="이미지 설명")

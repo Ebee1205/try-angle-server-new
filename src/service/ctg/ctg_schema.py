@@ -9,25 +9,25 @@ class CtgListRequest(BaseModel):
 
 
 class CtgGetRequest(BaseModel):
-    id: str = Field(...)
+    id: int = Field(...)
 
 
 class CtgCreateRequest(BaseModel):
-    userId: str = Field(...)
+    userId: int = Field(...)
     name: str = Field(...)
 
 
 class CtgUpdateRequest(BaseModel):
-    id: str = Field(...)
+    id: int = Field(...)
     name: Optional[str] = Field(None)
 
 
 class CtgDeleteRequest(BaseModel):
-    id: str = Field(...)
+    id: int = Field(...)
 
 
 class CtgItem(BaseModel):
-    id: str = Field(...)
+    id: int = Field(...)
     name: str = Field(...)
     cDate: int = Field(...)
     uDate: int = Field(...)
