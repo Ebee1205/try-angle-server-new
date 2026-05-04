@@ -9,19 +9,22 @@ START TRANSACTION;
 CREATE TABLE IF NOT EXISTS tb_user (
 	id BIGINT NOT NULL AUTO_INCREMENT,
 	email VARCHAR(255) NOT NULL,
-	password VARCHAR(255) NOT NULL,
+	password VARCHAR(255) NULL,
 	name VARCHAR(100) NULL,
 	nickname VARCHAR(100) NULL,
-	phone VARCHAR(30) NULL,
+	phone VARCHAR(20) NULL,
 	emailConf VARCHAR(1) NOT NULL DEFAULT '2',
 	`desc` TEXT NULL,
-	fileId VARCHAR(128) NULL,
+	fileId VARCHAR(255) NULL,
 	role ENUM('SUPER_ADMIN', 'ADMIN', 'CLIENT') NOT NULL DEFAULT 'CLIENT',
+	state INT NOT NULL DEFAULT 1,
 	extra JSON NULL,
 	cDate BIGINT NOT NULL,
 	uDate BIGINT NOT NULL,
 	PRIMARY KEY (id),
-	UNIQUE KEY uk_tb_user_email (email)
+	UNIQUE KEY uk_tb_user_email (email),
+	KEY idx_tb_user_state (state),
+	CONSTRAINT ck_tb_user_state CHECK (state IN (0, 1))
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 CREATE TABLE IF NOT EXISTS tb_img_ctg (
@@ -29,38 +32,34 @@ CREATE TABLE IF NOT EXISTS tb_img_ctg (
 	name VARCHAR(100) NOT NULL,
 	cDate BIGINT NOT NULL,
 	uDate BIGINT NOT NULL,
-	PRIMARY KEY (id),
-	UNIQUE KEY uk_tb_img_ctg_name (name)
+	PRIMARY KEY (id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 CREATE TABLE IF NOT EXISTS tb_tag (
 	id BIGINT NOT NULL AUTO_INCREMENT,
 	userId BIGINT NOT NULL,
-	parentCode VARCHAR(64) NULL,
-	code VARCHAR(64) NOT NULL,
+	parentCode VARCHAR(50) NULL,
+	code VARCHAR(50) NOT NULL,
 	tagName VARCHAR(100) NOT NULL,
 	cDate BIGINT NOT NULL,
 	uDate BIGINT NOT NULL,
 	PRIMARY KEY (id),
 	UNIQUE KEY uk_tb_tag_code (code),
 	KEY idx_tb_tag_userId (userId),
-	KEY idx_tb_tag_parentCode (parentCode),
 	CONSTRAINT fk_tb_tag_userId FOREIGN KEY (userId) REFERENCES tb_user (id)
-		ON DELETE RESTRICT ON UPDATE CASCADE,
-	CONSTRAINT fk_tb_tag_parentCode FOREIGN KEY (parentCode) REFERENCES tb_tag (code)
-		ON DELETE SET NULL ON UPDATE CASCADE
+		ON DELETE RESTRICT ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 CREATE TABLE IF NOT EXISTS tb_img (
 	id BIGINT NOT NULL AUTO_INCREMENT,
 	userId BIGINT NOT NULL,
 	ctgId BIGINT NOT NULL,
-	imgUrl VARCHAR(2048) NOT NULL,
+	imgUrl VARCHAR(500) NOT NULL,
 	title VARCHAR(200) NULL,
 	`desc` TEXT NULL,
 	useCnt INT NOT NULL DEFAULT 0,
 	kwd JSON NULL,
-	aiDocId VARCHAR(128) NULL,
+	aiDocId VARCHAR(100) NULL,
 	expWeight FLOAT NOT NULL DEFAULT 0,
 	pri INT NOT NULL DEFAULT 0,
 	cDate BIGINT NOT NULL,
@@ -76,13 +75,13 @@ CREATE TABLE IF NOT EXISTS tb_img (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 CREATE TABLE IF NOT EXISTS tb_session (
-	id BIGINT NOT NULL AUTO_INCREMENT,
+	id BIGINT NOT NULL,
 	userId BIGINT NOT NULL,
 	imgId BIGINT NOT NULL,
 	sDate BIGINT NOT NULL,
 	eDate BIGINT NULL,
 	device JSON NULL,
-	sStat VARCHAR(20) NOT NULL DEFAULT 'READY',
+	sStat INT NOT NULL DEFAULT 0,
 	cDate BIGINT NOT NULL,
 	uDate BIGINT NOT NULL,
 	PRIMARY KEY (id),
@@ -93,17 +92,36 @@ CREATE TABLE IF NOT EXISTS tb_session (
 		ON DELETE RESTRICT ON UPDATE CASCADE,
 	CONSTRAINT fk_tb_session_imgId FOREIGN KEY (imgId) REFERENCES tb_img (id)
 		ON DELETE RESTRICT ON UPDATE CASCADE,
-	CONSTRAINT ck_tb_session_sStat CHECK (sStat IN ('READY', 'COMPLETED', 'FAILED'))
+	CONSTRAINT ck_tb_session_sStat CHECK (sStat IN (0, 1, 2))
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+CREATE TABLE IF NOT EXISTS tb_prod (
+	id BIGINT NOT NULL AUTO_INCREMENT,
+	userId BIGINT NOT NULL,
+	name VARCHAR(200) NOT NULL,
+	`desc` VARCHAR(300) NULL,
+	price INT NOT NULL DEFAULT 0,
+	thumbUrl VARCHAR(500) NULL,
+	pStat INT NOT NULL DEFAULT 1,
+	cDate BIGINT NOT NULL,
+	uDate BIGINT NOT NULL,
+	PRIMARY KEY (id),
+	KEY idx_tb_prod_userId (userId),
+	KEY idx_tb_prod_pStat (pStat),
+	CONSTRAINT fk_tb_prod_userId FOREIGN KEY (userId) REFERENCES tb_user (id)
+		ON DELETE RESTRICT ON UPDATE CASCADE,
+	CONSTRAINT ck_tb_prod_pStat CHECK (pStat IN (0, 1, 2))
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 CREATE TABLE IF NOT EXISTS tb_snap (
 	id BIGINT NOT NULL AUTO_INCREMENT,
 	userId BIGINT NOT NULL,
+	prodId BIGINT NOT NULL,
 	imgId BIGINT NOT NULL,
 	sId BIGINT NULL,
-	snapUrl VARCHAR(2048) NOT NULL,
+	snapUrl VARCHAR(500) NOT NULL,
 	comment TEXT NULL,
-	gender VARCHAR(1) NULL,
+	gender INT NOT NULL DEFAULT 0,
 	userH FLOAT NULL,
 	userW FLOAT NULL,
 	viewCnt INT NOT NULL DEFAULT 0,
@@ -111,16 +129,19 @@ CREATE TABLE IF NOT EXISTS tb_snap (
 	uDate BIGINT NOT NULL,
 	PRIMARY KEY (id),
 	KEY idx_tb_snap_userId (userId),
+	KEY idx_tb_snap_prodId (prodId),
 	KEY idx_tb_snap_imgId (imgId),
-	KEY idx_tb_snap_sId (sId),
+	UNIQUE KEY uk_tb_snap_sId (sId),
 	KEY idx_tb_snap_viewCnt (viewCnt),
 	CONSTRAINT fk_tb_snap_userId FOREIGN KEY (userId) REFERENCES tb_user (id)
+		ON DELETE RESTRICT ON UPDATE CASCADE,
+	CONSTRAINT fk_tb_snap_prodId FOREIGN KEY (prodId) REFERENCES tb_prod (id)
 		ON DELETE RESTRICT ON UPDATE CASCADE,
 	CONSTRAINT fk_tb_snap_imgId FOREIGN KEY (imgId) REFERENCES tb_img (id)
 		ON DELETE RESTRICT ON UPDATE CASCADE,
 	CONSTRAINT fk_tb_snap_sId FOREIGN KEY (sId) REFERENCES tb_session (id)
 		ON DELETE SET NULL ON UPDATE CASCADE,
-	CONSTRAINT ck_tb_snap_gender CHECK (gender IS NULL OR gender IN ('M', 'F'))
+	CONSTRAINT ck_tb_snap_gender CHECK (gender IN (0, 1, 2))
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 CREATE TABLE IF NOT EXISTS mtb_bookmark (
