@@ -6,12 +6,13 @@ from passlib.context import CryptContext
 
 from src.app_context import AppContext
 from src.utils.db_utils import execute_query
-from src.service.auth.auth_schema import UserCreate, UserRole
+from src.service.auth.auth_schema import UserCreate, UserRole, UserState
 
 # 비밀번호 해싱 설정
 pwd_context = CryptContext(schemes=["pbkdf2_sha256"], deprecated="auto")
 
 ALGORITHM = "HS256"
+
 
 def get_password_hash(password: str) -> str:
     return pwd_context.hash(password)
@@ -35,54 +36,62 @@ def create_access_token(ctx: AppContext, data: dict, expiresDelta: Optional[time
     encodedJwt = jwt.encode(toEncode, secretKey, algorithm=ALGORITHM)
     return encodedJwt
 
-def get_user_by_email(ctx: AppContext, email: str) -> Optional[dict]:
-    # DB에서 사용자 조회
+
+def get_user_by_email(ctx: AppContext, email: str, activeOnly: bool = True) -> Optional[dict]:
     sql = """
         SELECT id, email, password, name, nickname, phone,
-               emailConf, `desc`, fileId, role, extra
+               emailConf, `desc`, fileId, role, state, extra
         FROM tb_user
         WHERE email = %s
     """
+    params = [email]
+    if activeOnly:
+        sql += " AND state = %s"
+        params.append(UserState.ACTIVE.value)
+
     if not ctx.db_handler:
         return None
 
-    rows = execute_query(ctx.db_handler, sql, (email,))
-    if rows:
-        row = rows[0]
-        extra = row[10] or {}
-        if isinstance(extra, str):
-            import json as _json
-            extra = _json.loads(extra)
-        return {
-            "id": row[0],
-            "email": row[1],
-            "password": row[2],
-            "name": row[3],
-            "nickname": row[4],
-            "phone": row[5],
-            "emailConf": row[6],
-            "desc": row[7],
-            "fileId": row[8],
-            "role": row[9],
-            "extra": extra,
-            "provider": extra.get("provider", "email"),
-            "providerId": extra.get("providerId"),
-        }
-    return None
+    rows = execute_query(ctx.db_handler, sql, tuple(params))
+    if not rows:
+        return None
+
+    row = rows[0]
+    extra = row[11] or {}
+    if isinstance(extra, str):
+        import json as _json
+        extra = _json.loads(extra)
+
+    return {
+        "id": row[0],
+        "email": row[1],
+        "password": row[2],
+        "name": row[3],
+        "nickname": row[4],
+        "phone": row[5],
+        "emailConf": row[6],
+        "desc": row[7],
+        "fileId": row[8],
+        "role": row[9],
+        "state": row[10],
+        "extra": extra,
+        "provider": extra.get("provider", "email"),
+        "providerId": extra.get("providerId"),
+    }
+
 
 def create_user(ctx: AppContext, user: UserCreate) -> dict:
     if ctx.db_handler is None:
          # DB 연결이 없을 경우 에러 처리 혹은 Mocking
         raise HTTPException(status_code=500, detail="Database not initialized")
 
-    existing = get_user_by_email(ctx, user.email)
+    existing = get_user_by_email(ctx, user.email, activeOnly=False)
     if existing:
         raise HTTPException(status_code=400, detail="Email already registered")
     
     hashedPassword = get_password_hash(user.password) if user.password else None
 
-    # role 기본값 확인
-    role = user.role if user.role else UserRole.CLIENT
+    role = UserRole.CLIENT
 
     # provider/providerId는 extra JSON에 저장
     import json as _json
@@ -98,13 +107,13 @@ def create_user(ctx: AppContext, user: UserCreate) -> dict:
     sql = """
         INSERT INTO tb_user (
             name, nickname, email, password, phone,
-            emailConf, `desc`, fileId, role, extra, cDate, uDate
-        ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+            emailConf, `desc`, fileId, role, state, extra, cDate, uDate
+        ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
     """
     params = (
         user.name, user.nickname, user.email, hashedPassword,
         user.phone, user.emailConf, user.desc, user.fileId,
-        role.value, _json.dumps(extra, ensure_ascii=False), now, now
+        role.value, UserState.ACTIVE.value, _json.dumps(extra, ensure_ascii=False), now, now
     )
 
     conn = ctx.db_handler.get_connection()
@@ -124,9 +133,11 @@ def create_user(ctx: AppContext, user: UserCreate) -> dict:
         "email": user.email,
         "name": user.name,
         "nickname": user.nickname,
-        "role": role,
+        "role": role.value,
+        "state": UserState.ACTIVE.value,
         "provider": user.provider,
     }
+
 
 def authenticate_user(ctx: AppContext, email: str, password: str):
     user = get_user_by_email(ctx, email)
@@ -136,18 +147,20 @@ def authenticate_user(ctx: AppContext, email: str, password: str):
         return False
     return user
 
+
 def check_user_exists(ctx: AppContext, userId: int) -> bool:
-    sql = "SELECT id FROM tb_user WHERE id = %s"
+    sql = "SELECT id FROM tb_user WHERE id = %s AND state = %s"
     if not ctx.db_handler:
         return False
-    rows = execute_query(ctx.db_handler, sql, (userId,))
+    rows = execute_query(ctx.db_handler, sql, (userId, UserState.ACTIVE.value))
     return bool(rows)
 
+
 def check_email_exists(ctx: AppContext, email: str) -> bool:
-    sql = "SELECT id FROM tb_user WHERE email = %s"
+    sql = "SELECT id FROM tb_user WHERE email = %s AND state = %s"
     if not ctx.db_handler:
         return False
-    rows = execute_query(ctx.db_handler, sql, (email,))
+    rows = execute_query(ctx.db_handler, sql, (email, UserState.ACTIVE.value))
     return bool(rows)
 
 def update_user(ctx: AppContext, userId: int, data: dict) -> dict:

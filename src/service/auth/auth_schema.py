@@ -7,6 +7,11 @@ class UserRole(str, Enum):
     ADMIN = "ADMIN"
     CLIENT = "CLIENT"
 
+
+class UserState(int, Enum):
+    INACTIVE = 0
+    ACTIVE = 1
+
 class UserBase(BaseModel):
     """
     사용자 기본 정보 스키마
@@ -23,7 +28,6 @@ class UserBase(BaseModel):
     # 간편 로그인(Social Login) 확장을 위한 필드
     provider: str = Field("email", description="가입 경로 (email, google, naver, kakao 등)")
     providerId: Optional[str] = Field(None, description="소셜 로그인 제공자 측의 식별자")
-    role: UserRole = Field(UserRole.CLIENT, description="권한 레벨 (SUPER_ADMIN, ADMIN, CLIENT)")
 
 
 class UserCreate(UserBase):
@@ -69,6 +73,8 @@ class UserResponse(UserBase):
     회원정보 응답 스키마
     """
     id: int
+    role: UserRole = Field(UserRole.CLIENT, description="권한 레벨 (SUPER_ADMIN, ADMIN, CLIENT)")
+    state: UserState = Field(UserState.ACTIVE, description="계정 상태 (0: INACTIVE, 1: ACTIVE)")
     # password는 제외됨
 
     class Config:
