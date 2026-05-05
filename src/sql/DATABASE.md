@@ -126,7 +126,7 @@
 | **id** | bigint | PK, Auto Increment | 상품 고유 식별자 |
 | **userId** | bigint | FK (`tb_user.id`) | 상품 등록 사용자 ID |
 | **name** | varchar | Not Null | 상품명 |
-| **desc** | varchar | - | 상품 설명 |
+| **brand** | varchar | - | 상품 브랜드 |
 | **price** | int | Default: 0 | 상품 가격 |
 | **thumbUrl** | varchar | - | 상품 썸네일 경로 |
 | **pStat** | int | Default: 1 | 상품 상태 (`0: INACTIVE`, `1: ACTIVE`, `2: SOLD_OUT`) |
