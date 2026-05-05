@@ -25,6 +25,7 @@ from src.service.auth.auth_api import router as auth_router
 from src.service.logging.logging_api import router as logging_router
 from src.service.tag.tag_api import router as tag_router
 from src.service.ctg.ctg_api import router as ctg_router
+from src.service.prod.prod_api import router as prod_router
 
 class AppFactory:
     """애플리케이션 팩토리 클래스"""
@@ -144,6 +145,7 @@ class AppFactory:
             logging_router,
             tag_router,
             ctg_router,
+            prod_router,
         ]
         for router in routers:
             app.include_router(router)
