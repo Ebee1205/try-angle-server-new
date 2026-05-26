@@ -1,140 +1,266 @@
 import json
-from pathlib import Path
+import time
+
+from fastapi import HTTPException
 
 from src.app_context import AppContext
 from src.service.reference.reference_schema import (
-	RefCreateRequest,
-	RefListItem,
-	RefListResponse,
-	RefResponse,
-	RefUpdateRequest,
+    RefCategory,
+    RefCreateRequest,
+    RefItem,
+    RefListResponse,
+    RefUpdateRequest,
+    RefUser,
 )
+from src.utils.db_utils import execute_query
 
 
-SAMPLE_AI_DATA_PATH = Path(__file__).resolve().parents[3] / "ref-ai-data-sample.json"
-SAMPLE_UNIX_TIMESTAMP = 1774180800
+def _parse_json_field(value, default):
+    if value is None:
+        return default
+    if isinstance(value, (dict, list)):
+        return value
+    if isinstance(value, str):
+        try:
+            return json.loads(value)
+        except Exception:
+            return default
+    return default
 
 
-def _load_sample_ai_data() -> dict:
-	with SAMPLE_AI_DATA_PATH.open("r", encoding="utf-8") as file:
-		return json.load(file)
+def _row_to_ref_item(row: tuple) -> RefItem:
+    return RefItem(
+        imgId=row[0],
+        user=RefUser(userId=row[1], nickname=row[2], fileUrl=row[3]),
+        ctg=RefCategory(ctgId=row[4], ctgName=row[5]),
+        imgUrl=row[6],
+        title=row[7],
+        desc=row[8],
+        useCnt=row[9],
+        kwd=_parse_json_field(row[10], []),
+        aiDoc=_parse_json_field(row[11], None),
+        expWeight=row[12],
+        pri=row[13],
+        cDate=row[14],
+        uDate=row[15],
+    )
 
 
-def _get_sample_reference_base() -> dict:
-	return {
-		"id": 1,
-		"userId": 1,
-		"ctgId": 1,
-		"imgUrl": "/legacy/hot1.jpg",
-		"title": "하이앵글 컵포즈",
-		"desc": "위에서 아래를 극단적으로 내려다보는 하이 앵글(High Angle)로 촬영하여, 얼굴을 가린 컵을 강조하고 신체 비율을 독특하게 왜곡한 구도입니다.",
-		"categoryName": "reference",
-		"useCnt": 0,
-		"kwd": ["K001", "K002"],
-		"aiDocId": "ai-doc-sample-001",
-		"expWeight": 0,
-		"pri": 0,
-		"cDate": SAMPLE_UNIX_TIMESTAMP,
-		"uDate": SAMPLE_UNIX_TIMESTAMP,
-	}
+def _ensure_ctg_exists(ctx: AppContext, ctg_id: int) -> None:
+    rows = execute_query(ctx.db_handler, "SELECT id FROM tb_img_ctg WHERE id = %s", (ctg_id,))
+    if not rows:
+        raise HTTPException(status_code=400, detail="Category not found")
 
 
-def list_references(
-	ctx: AppContext,
-	page: int = 1,
-	limit: int = 20,
-	ctg_id: int | None = None,
+def list_refs(
+    ctx: AppContext,
+    page: int = 1,
+    limit: int = 20,
+    ctg_id: int | None = None,
 ) -> RefListResponse:
-	"""테스트용 레퍼런스 이미지 목록 조회"""
-	if ctx.log:
-		ctx.log.debug(f"Ref list requested | page={page} limit={limit} ctg_id={ctg_id}")
+    if not ctx.db_handler:
+        raise HTTPException(status_code=500, detail="Database not initialized")
 
-	base_item = RefListItem(**_get_sample_reference_base())
-	items = [base_item]
-	if ctg_id:
-		items = [item for item in items if item.ctgId == ctg_id]
+    offset = (page - 1) * limit
 
-	start = max((page - 1) * limit, 0)
-	end = start + max(limit, 0)
-	paged_items = items[start:end]
+    where_clause = ""
+    where_params: tuple = ()
+    if ctg_id is not None:
+        where_clause = "WHERE i.ctgId = %s"
+        where_params = (ctg_id,)
 
-	return RefListResponse(
-		items=paged_items,
-		total=len(items),
-		page=page,
-		limit=limit,
-	)
+    count_sql = f"SELECT COUNT(*) FROM tb_img i {where_clause}"
+    count_rows = execute_query(ctx.db_handler, count_sql, where_params)
+    total = count_rows[0][0] if count_rows else 0
 
-
-def get_reference(ctx: AppContext, reference_id: int) -> RefResponse:
-	"""테스트용 레퍼런스 이미지 상세 정보 조회"""
-	if ctx.log:
-		ctx.log.debug(f"Ref requested | reference_id={reference_id}")
-
-	return RefResponse(
-		**_get_sample_reference_base(),
-		ai_data=_load_sample_ai_data(),
-	)
-
-
-def create_reference(ctx: AppContext, payload: RefCreateRequest) -> RefResponse:
-	"""테스트용 레퍼런스 이미지 등록"""
-	if ctx.log:
-		ctx.log.debug(f"Ref create requested | ctgId={payload.ctgId}")
-
-	base = _get_sample_reference_base()
-	base.update(
-		{
-			"userId": payload.userId,
-			"ctgId": payload.ctgId,
-			"imgUrl": payload.imgUrl,
-			"title": payload.title or base["title"],
-			"desc": payload.desc,
-			"kwd": payload.kwd or [],
-			"aiDocId": payload.aiDocId,
-			"expWeight": payload.expWeight,
-			"pri": payload.pri,
-		}
-	)
-
-	return RefResponse(**base, ai_data=_load_sample_ai_data())
+    list_sql = f"""
+        SELECT
+            i.id,
+            i.userId,
+            u.nickname,
+            u.fileId,
+            i.ctgId,
+            c.name,
+            i.imgUrl,
+            i.title,
+            i.`desc`,
+            i.useCnt,
+            i.kwd,
+            i.aiDoc,
+            i.expWeight,
+            i.pri,
+            i.cDate,
+            i.uDate
+        FROM tb_img i
+        INNER JOIN tb_user u ON u.id = i.userId
+        INNER JOIN tb_img_ctg c ON c.id = i.ctgId
+        {where_clause}
+        ORDER BY i.cDate DESC
+        LIMIT %s OFFSET %s
+    """
+    rows = execute_query(ctx.db_handler, list_sql, where_params + (limit, offset))
+    items = [_row_to_ref_item(row) for row in rows]
+    return RefListResponse(items=items, total=total, page=page, limit=limit)
 
 
-def update_reference(ctx: AppContext, payload: RefUpdateRequest) -> RefResponse:
-	"""테스트용 레퍼런스 이미지 수정"""
-	if ctx.log:
-		ctx.log.debug(f"Ref update requested | id={payload.id}")
+def get_ref(ctx: AppContext, img_id: int) -> RefItem:
+    if not ctx.db_handler:
+        raise HTTPException(status_code=500, detail="Database not initialized")
 
-	base = _get_sample_reference_base()
-	base["id"] = payload.id
+    sql = """
+        SELECT
+            i.id,
+            i.userId,
+            u.nickname,
+            u.fileId,
+            i.ctgId,
+            c.name,
+            i.imgUrl,
+            i.title,
+            i.`desc`,
+            i.useCnt,
+            i.kwd,
+            i.aiDoc,
+            i.expWeight,
+            i.pri,
+            i.cDate,
+            i.uDate
+        FROM tb_img i
+        INNER JOIN tb_user u ON u.id = i.userId
+        INNER JOIN tb_img_ctg c ON c.id = i.ctgId
+        WHERE i.id = %s
+    """
+    rows = execute_query(ctx.db_handler, sql, (img_id,))
+    if not rows:
+        raise HTTPException(status_code=404, detail="Reference image not found")
+    return _row_to_ref_item(rows[0])
 
-	if payload.ctgId is not None:
-		base["ctgId"] = payload.ctgId
-	if payload.imgUrl is not None:
-		base["imgUrl"] = payload.imgUrl
-	if payload.title is not None:
-		base["title"] = payload.title
-	if payload.desc is not None:
-		base["desc"] = payload.desc
-	if payload.kwd is not None:
-		base["kwd"] = payload.kwd
-	if payload.aiDocId is not None:
-		base["aiDocId"] = payload.aiDocId
-	if payload.expWeight is not None:
-		base["expWeight"] = payload.expWeight
-	if payload.pri is not None:
-		base["pri"] = payload.pri
 
-	return RefResponse(**base, ai_data=_load_sample_ai_data())
+def create_ref(ctx: AppContext, payload: RefCreateRequest, user_id: int) -> RefItem:
+    if not ctx.db_handler:
+        raise HTTPException(status_code=500, detail="Database not initialized")
+
+    _ensure_ctg_exists(ctx, payload.ctgId)
+
+    now = int(time.time())
+    kwd_json = json.dumps(payload.kwd, ensure_ascii=False) if payload.kwd is not None else None
+    ai_doc_json = json.dumps(payload.aiDoc, ensure_ascii=False) if payload.aiDoc is not None else None
+
+    sql = """
+        INSERT INTO tb_img (userId, ctgId, imgUrl, title, `desc`, useCnt, kwd, aiDoc, expWeight, pri, cDate, uDate)
+        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+    """
+    params = (
+        user_id,
+        payload.ctgId,
+        payload.imgUrl,
+        payload.title,
+        payload.desc,
+        0,
+        kwd_json,
+        ai_doc_json,
+        payload.expWeight,
+        payload.pri,
+        now,
+        now,
+    )
+
+    conn = ctx.db_handler.get_connection()
+    new_id: int | None = None
+    try:
+        with conn.cursor() as cursor:
+            cursor.execute(sql, params)
+            new_id = cursor.lastrowid
+        conn.commit()
+    except Exception as e:
+        conn.rollback()
+        if ctx.log:
+            ctx.log.error(f"Failed to create reference image: {e}")
+        raise HTTPException(status_code=500, detail="Failed to create reference image")
+
+    return get_ref(ctx, new_id)
 
 
-def delete_reference(ctx: AppContext, reference_id: int) -> dict:
-	"""테스트용 레퍼런스 이미지 삭제"""
-	if ctx.log:
-		ctx.log.debug(f"Ref delete requested | id={reference_id}")
+def update_ref(ctx: AppContext, payload: RefUpdateRequest) -> RefItem:
+    if not ctx.db_handler:
+        raise HTTPException(status_code=500, detail="Database not initialized")
 
-	return {
-		"status": "success",
-		"id": reference_id,
-	}
+    exists = execute_query(ctx.db_handler, "SELECT id FROM tb_img WHERE id = %s", (payload.id,))
+    if not exists:
+        raise HTTPException(status_code=404, detail="Reference image not found")
 
+    fields = []
+    params = []
+
+    if payload.ctgId is not None:
+        _ensure_ctg_exists(ctx, payload.ctgId)
+        fields.append("ctgId = %s")
+        params.append(payload.ctgId)
+    if payload.imgUrl is not None:
+        fields.append("imgUrl = %s")
+        params.append(payload.imgUrl)
+    if payload.title is not None:
+        fields.append("title = %s")
+        params.append(payload.title)
+    if payload.desc is not None:
+        fields.append("`desc` = %s")
+        params.append(payload.desc)
+    if payload.useCnt is not None:
+        fields.append("useCnt = %s")
+        params.append(payload.useCnt)
+    if payload.kwd is not None:
+        fields.append("kwd = %s")
+        params.append(json.dumps(payload.kwd, ensure_ascii=False))
+    if payload.aiDoc is not None:
+        fields.append("aiDoc = %s")
+        params.append(json.dumps(payload.aiDoc, ensure_ascii=False))
+    if payload.expWeight is not None:
+        fields.append("expWeight = %s")
+        params.append(payload.expWeight)
+    if payload.pri is not None:
+        fields.append("pri = %s")
+        params.append(payload.pri)
+
+    if not fields:
+        raise HTTPException(status_code=400, detail="No fields to update")
+
+    now = int(time.time())
+    fields.append("uDate = %s")
+    params.append(now)
+    params.append(payload.id)
+
+    sql = f"UPDATE tb_img SET {', '.join(fields)} WHERE id = %s"
+    conn = ctx.db_handler.get_connection()
+    try:
+        with conn.cursor() as cursor:
+            cursor.execute(sql, params)
+        conn.commit()
+    except Exception as e:
+        conn.rollback()
+        if ctx.log:
+            ctx.log.error(f"Failed to update reference image: {e}")
+        raise HTTPException(status_code=500, detail="Failed to update reference image")
+
+    return get_ref(ctx, payload.id)
+
+
+def delete_ref(ctx: AppContext, img_id: int) -> dict:
+    if not ctx.db_handler:
+        raise HTTPException(status_code=500, detail="Database not initialized")
+
+    rows = execute_query(ctx.db_handler, "SELECT id FROM tb_img WHERE id = %s", (img_id,))
+    if not rows:
+        raise HTTPException(status_code=404, detail="Reference image not found")
+
+    conn = ctx.db_handler.get_connection()
+    try:
+        with conn.cursor() as cursor:
+            cursor.execute("DELETE FROM tb_img WHERE id = %s", (img_id,))
+        conn.commit()
+    except Exception as e:
+        conn.rollback()
+        if ctx.log:
+            ctx.log.error(f"Failed to delete reference image: {e}")
+        raise HTTPException(status_code=500, detail="Failed to delete reference image")
+
+    return {"id": img_id, "deleted": True}
