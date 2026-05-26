@@ -44,8 +44,9 @@ async def login(request: Request, loginReq: UserLogin):
         ctx, 
         data={"sub": user["email"], "role": user["role"]}
     )
-    return build_success_response({"accessToken": accessToken, "tokenType": "bearer"})
-
+    safe_user = dict(user)
+    safe_user.pop("password", None)
+    return build_success_response(safe_user)
 
 @router.post("/token")
 async def loginForm(request: Request, formData: OAuth2PasswordRequestForm = Depends()):
