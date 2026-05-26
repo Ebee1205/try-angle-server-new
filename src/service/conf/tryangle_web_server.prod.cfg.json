@@ -22,29 +22,6 @@
       "database": "tryangle"
     },
 
-    "rmq": {
-      "host": "localhost",
-      "port": 5672,
-      "user": "guest",
-      "password": "guest",
-      "queues": [
-        { "name": "tryangle-send-logs", "type": "pub" }
-      ]
-    },
-
-    "redis": {
-      "host": "localhost",
-      "port": 6379,
-      "db": 0,
-      "password": null
-    },
-
-    "redis_consumer": {
-      "stream_key": "session:chat:*",
-      "group_name": "web-group",
-      "consumer_name": "web-consumer-1"
-    },
-
     "r2": {
       "account_id": "tryangle-images",
       "bucket_name": "tryangle-images",
