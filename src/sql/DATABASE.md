@@ -61,7 +61,7 @@
 | **desc** | text | - | 이미지 설명 |
 | **useCnt** | int | Default: 0 | 참조 촬영 횟수 |
 | **kwd** | json | - | 키워드 코드 리스트 |
-| **aiDocId** | varchar | - | noneSQL DB Document ID (가이드라인 정보) |
+| **aiDoc** | varchar | - | AI json Document (가이드라인 정보) |
 | **expWeight** | float | Default: 0 | 노출 가중치 |
 | **pri** | int | Default: 0 | 우선순위 |
 | **cDate** | bigint | - | 생성일 (Unix Timestamp) |
