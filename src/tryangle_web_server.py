@@ -278,4 +278,4 @@ app = AppFactory.create_app()
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run("src.tryangle_web_server:app", host="0.0.0.0", port=8000, reload=True)
+    uvicorn.run("src.tryangle_web_server:app", host="0.0.0.0", port=8738, reload=True)
