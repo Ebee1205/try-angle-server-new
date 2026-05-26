@@ -74,6 +74,26 @@ def list_prods(
 	return ProdListResponse(items=items, total=total, page=page, limit=limit)
 
 
+def get_prod(ctx: AppContext, prod_id: int) -> ProdItem:
+	"""상품 상세 조회"""
+	if ctx.log:
+		ctx.log.debug(f"Prod get requested | id={prod_id}")
+
+	if not ctx.db_handler:
+		raise HTTPException(status_code=500, detail="Database not initialized")
+
+	sql = """
+		SELECT id, userId, name, brand, price, thumbUrl, pStat, cDate, uDate
+		FROM tb_prod
+		WHERE id = %s
+	"""
+	rows = execute_query(ctx.db_handler, sql, (prod_id,))
+	if not rows:
+		raise HTTPException(status_code=404, detail="Product not found")
+
+	return _row_to_prod_item(rows[0])
+
+
 def create_prod(ctx: AppContext, payload: ProdCreateRequest, user_id: int) -> ProdItem:
 	"""상품 등록"""
 	if ctx.log:

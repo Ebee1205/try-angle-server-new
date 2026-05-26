@@ -7,6 +7,7 @@ from src.service.prod import prod_service
 from src.service.prod.prod_schema import (
 	ProdCreateRequest,
 	ProdDeleteRequest,
+	ProdGetRequest,
 	ProdListRequest,
 	ProdUpdateRequest,
 )
@@ -24,6 +25,14 @@ async def list_prods(request: Request, payload: ProdListRequest, _=Depends(requi
 		limit=payload.limit,
 		p_stat=payload.pStat,
 	)
+	return build_success_response(result)
+
+
+@router.post("/get")
+async def get_prod(request: Request, payload: ProdGetRequest, _=Depends(require_user)):
+	"""상품 조회"""
+	ctx = request.app.state.ctx
+	result = prod_service.get_prod(ctx, payload.id)
 	return build_success_response(result)
 
 

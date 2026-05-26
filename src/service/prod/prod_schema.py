@@ -19,6 +19,11 @@ class ProdCreateRequest(BaseModel):
 	pStat: int = Field(1, description="상품 상태 (0: INACTIVE, 1: ACTIVE, 2: SOLD_OUT)")
 
 
+class ProdGetRequest(BaseModel):
+	"""상품 조회 요청 스키마"""
+	id: int = Field(..., description="상품 ID")
+
+
 class ProdUpdateRequest(BaseModel):
 	"""상품 수정 요청 스키마"""
 	id: int = Field(..., description="상품 ID")
