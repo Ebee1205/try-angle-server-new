@@ -106,7 +106,7 @@
 
 | 컬럼명 | 타입 | 제약사항 | 설명 |
 | :--- | :--- | :--- | :--- |
-| **id** | bigint | PK | 세션 고유 식별자 |
+| **id** | varchar(32) | PK | 세션 고유 식별자 (`UUIDv4 hex`, `generate_sid` 사용) |
 | **userId** | bigint | FK (`tb_user.id`) | 세션 사용자 ID |
 | **imgId** | bigint | FK (`tb_img.id`) | 참조한 레퍼런스 이미지 ID |
 | **sDate** | bigint | - | 시작 시간 (Unix Timestamp) |
@@ -116,7 +116,7 @@
 | **cDate** | bigint | - | 생성일 (Unix Timestamp) |
 | **uDate** | bigint | - | 수정일 (Unix Timestamp) |
 
-> `tb_session.id`는 Non-SQL 시스템 로그 데이터와 매핑되는 연결 키로 사용되므로 `AUTO_INCREMENT` 예외 테이블입니다.
+> `tb_session.id`는 Non-SQL 시스템 로그 데이터와 매핑되는 연결 키로 사용되므로 `generate_sid()`가 반환하는 UUIDv4 hex 문자열 PK입니다.
 
 ### 2.8 상품 정보 (`tb_prod`)
 스냅과 연결되는 상품 메타데이터를 관리합니다.
