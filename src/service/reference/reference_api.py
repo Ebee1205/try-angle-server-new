@@ -22,7 +22,9 @@ async def list_refs(request: Request, payload: RefListRequest, _=Depends(require
         ctx,
         page=payload.page,
         limit=payload.limit,
-        ctg_id=payload.ctgId,
+        ctg_id=payload.filter.ctgId if payload.filter else None,
+        title=payload.filter.title if payload.filter else None,
+        kwd=payload.filter.kwd if payload.filter else None,
     )
     return build_success_response(result)
 

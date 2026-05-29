@@ -8,7 +8,9 @@ from src.service.reference.reference_schema import (
     RefCategory,
     RefCreateRequest,
     RefItem,
+    RefListItem,
     RefListResponse,
+    RefListUser,
     RefUpdateRequest,
     RefUser,
 )
@@ -46,6 +48,22 @@ def _row_to_ref_item(row: tuple) -> RefItem:
     )
 
 
+def _row_to_ref_list_item(row: tuple) -> RefListItem:
+    return RefListItem(
+        imgId=row[0],
+        user=RefListUser(userId=row[1], nickname=row[2]),
+        ctg=RefCategory(ctgId=row[3], ctgName=row[4]),
+        imgUrl=row[5],
+        title=row[6],
+        useCnt=row[7],
+        kwd=_parse_json_field(row[8], []),
+        expWeight=row[9],
+        pri=row[10],
+        cDate=row[11],
+        uDate=row[12],
+    )
+
+
 def _ensure_ctg_exists(ctx: AppContext, ctg_id: int) -> None:
     rows = execute_query(ctx.db_handler, "SELECT id FROM tb_img_ctg WHERE id = %s", (ctg_id,))
     if not rows:
@@ -57,20 +75,29 @@ def list_refs(
     page: int = 1,
     limit: int = 20,
     ctg_id: int | None = None,
+    title: str | None = None,
+    kwd: list | None = None,
 ) -> RefListResponse:
     if not ctx.db_handler:
         raise HTTPException(status_code=500, detail="Database not initialized")
 
-    offset = (page - 1) * limit
-
-    where_clause = ""
-    where_params: tuple = ()
+    where_conditions: list[str] = []
+    where_params: list = []
     if ctg_id is not None:
-        where_clause = "WHERE i.ctgId = %s"
-        where_params = (ctg_id,)
+        where_conditions.append("i.ctgId = %s")
+        where_params.append(ctg_id)
+    if title is not None and title.strip() != "":
+        where_conditions.append("i.title LIKE %s")
+        where_params.append(f"%{title.strip()}%")
+    if kwd:
+        where_conditions.append("JSON_OVERLAPS(i.kwd, CAST(%s AS JSON))")
+        where_params.append(json.dumps(kwd, ensure_ascii=False))
+
+    where_clause = f"WHERE {' AND '.join(where_conditions)}" if where_conditions else ""
+    where_params_tuple = tuple(where_params)
 
     count_sql = f"SELECT COUNT(*) FROM tb_img i {where_clause}"
-    count_rows = execute_query(ctx.db_handler, count_sql, where_params)
+    count_rows = execute_query(ctx.db_handler, count_sql, where_params_tuple)
     total = count_rows[0][0] if count_rows else 0
 
     list_sql = f"""
@@ -78,15 +105,12 @@ def list_refs(
             i.id,
             i.userId,
             u.nickname,
-            u.fileId,
             i.ctgId,
             c.name,
             i.imgUrl,
             i.title,
-            i.`desc`,
             i.useCnt,
             i.kwd,
-            i.aiDoc,
             i.expWeight,
             i.pri,
             i.cDate,
@@ -96,10 +120,19 @@ def list_refs(
         INNER JOIN tb_img_ctg c ON c.id = i.ctgId
         {where_clause}
         ORDER BY i.cDate DESC
-        LIMIT %s OFFSET %s
     """
-    rows = execute_query(ctx.db_handler, list_sql, where_params + (limit, offset))
-    items = [_row_to_ref_item(row) for row in rows]
+
+    if page == 0:
+        rows = execute_query(ctx.db_handler, list_sql, where_params_tuple)
+    else:
+        offset = (page - 1) * limit
+        rows = execute_query(
+            ctx.db_handler,
+            f"{list_sql}\n        LIMIT %s OFFSET %s",
+            where_params_tuple + (limit, offset),
+        )
+
+    items = [_row_to_ref_list_item(row) for row in rows]
     return RefListResponse(items=items, total=total, page=page, limit=limit)
 
 

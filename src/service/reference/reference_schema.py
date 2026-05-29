@@ -3,10 +3,16 @@ from typing import Any, Optional
 from pydantic import BaseModel, Field
 
 
-class RefListRequest(BaseModel):
-    page: int = Field(1, ge=1, description="페이지 번호")
-    limit: int = Field(20, ge=1, le=100, description="페이지 크기")
+class RefListFilter(BaseModel):
     ctgId: Optional[int] = Field(None, description="카테고리 ID 필터")
+    title: Optional[str] = Field(None, description="제목 문자열 검색")
+    kwd: Optional[list[Any]] = Field(None, description="키워드 검색 배열")
+
+
+class RefListRequest(BaseModel):
+    filter: Optional[RefListFilter] = Field(None, description="목록 필터")
+    page: int = Field(1, ge=0, description="페이지 번호 (0이면 전체 조회)")
+    limit: int = Field(20, ge=1, le=100, description="페이지 크기")
 
 
 class RefGetRequest(BaseModel):
@@ -77,8 +83,33 @@ class RefItem(BaseModel):
         from_attributes = True
 
 
+class RefListUser(BaseModel):
+    userId: int = Field(...)
+    nickname: Optional[str] = Field(None)
+
+    class Config:
+        from_attributes = True
+
+
+class RefListItem(BaseModel):
+    imgId: int = Field(...)
+    user: RefListUser
+    imgUrl: str = Field(...)
+    ctg: RefCategory
+    title: Optional[str] = Field(None)
+    useCnt: int = Field(...)
+    kwd: list[Any] = Field(default_factory=list)
+    expWeight: float = Field(...)
+    pri: int = Field(...)
+    cDate: int = Field(...)
+    uDate: int = Field(...)
+
+    class Config:
+        from_attributes = True
+
+
 class RefListResponse(BaseModel):
-    items: list[RefItem]
+    items: list[RefListItem]
     total: int
     page: int
     limit: int
