@@ -16,6 +16,10 @@ UPLOAD_CONFIG = {
         "path": "profiles/",
         "prefix": "p_",
     },
+    "prod": {
+        "path": "prod/",
+        "prefix": "prod_",
+    },
     "reference": {
         "path": "reference/",
         "prefix": "ref_",
