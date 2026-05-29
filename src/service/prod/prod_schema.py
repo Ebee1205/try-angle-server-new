@@ -3,11 +3,17 @@ from typing import Optional
 from pydantic import BaseModel, Field
 
 
+class ProdListFilter(BaseModel):
+	"""상품 목록 필터 스키마"""
+	name: Optional[str] = Field(None, description="상품명 문자열 검색")
+	pStat: Optional[int] = Field(None, description="상품 상태 필터 (0: INACTIVE, 1: ACTIVE, 2: SOLD_OUT)")
+
+
 class ProdListRequest(BaseModel):
 	"""상품 목록 조회 요청 스키마"""
+	filter: Optional[ProdListFilter] = Field(None, description="상품 목록 필터")
 	page: int = Field(1, ge=1, description="페이지 번호")
 	limit: int = Field(20, ge=1, le=100, description="페이지 크기")
-	pStat: Optional[int] = Field(None, description="상품 상태 필터 (0: INACTIVE, 1: ACTIVE, 2: SOLD_OUT)")
 
 
 class ProdCreateRequest(BaseModel):
@@ -42,7 +48,7 @@ class ProdDeleteRequest(BaseModel):
 class ProdItem(BaseModel):
 	"""상품 아이템 스키마"""
 	id: int = Field(..., description="상품 ID")
-	userId: int = Field(..., description="상품 등록 사용자 ID")
+	userName: str = Field(..., description="상품 등록자 이름")
 	name: str = Field(..., description="상품명")
 	brand: Optional[str] = Field(None, description="상품 브랜드")
 	price: int = Field(..., description="상품 가격")

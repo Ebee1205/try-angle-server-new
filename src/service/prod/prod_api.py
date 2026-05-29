@@ -23,7 +23,8 @@ async def list_prods(request: Request, payload: ProdListRequest, _=Depends(requi
 		ctx,
 		page=payload.page,
 		limit=payload.limit,
-		p_stat=payload.pStat,
+		name=payload.filter.name if payload.filter else None,
+		p_stat=payload.filter.pStat if payload.filter else None,
 	)
 	return build_success_response(result)
 
