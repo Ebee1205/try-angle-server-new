@@ -4,7 +4,7 @@ from pydantic import BaseModel, Field
 
 
 class CtgListRequest(BaseModel):
-    page: int = Field(1, ge=1)
+    page: int = Field(1, ge=0, description="페이지 번호 (0이면 전체 조회)")
     limit: int = Field(20, ge=1, le=100)
 
 
