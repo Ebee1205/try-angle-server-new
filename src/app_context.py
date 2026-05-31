@@ -15,12 +15,7 @@ from typing import Optional
 from src.modules import logger
 
 from src.modules.system_monitor import SystemMonitor
-from src.handler.websocket_handler import WebSocketHandler
 from src.handler.db_handler import DBHandler
-# from src.handler.mongodb_handler import MongoDBHandler
-from src.handler.rabbitmq_handler import RabbitMQHandler
-from src.handler.redis_handler import RedisHandler
-from src.handler.redis_stream_consumer import RedisStreamConsumer
 
 class LoggerConfig(BaseModel):
     level: str
@@ -46,32 +41,6 @@ class DBConfig(BaseModel):
     charset: Optional[str] = "utf8mb4"
     autocommit: Optional[bool] = True
 
-class MongoDBConfig(BaseModel):
-    host: Optional[str]
-    port: Optional[int]
-    user: Optional[str]
-    password: Optional[str] = None
-    database: Optional[str] = None
-    
-class RMQConfig(BaseModel):
-    host: Optional[str]
-    port: Optional[int]
-    user: Optional[str]
-    password: Optional[str]
-    queues: Optional[list[dict]]
-
-class RedisConfig(BaseModel):
-    host: Optional[str]
-    port: Optional[int]
-    db: Optional[int]
-    password: Optional[str] = None
-
-class RedisConsumerConfig(BaseModel):
-    stream_key: Optional[str]
-    group_name: Optional[str]
-    consumer_name: Optional[str]
-
-
 class R2Config(BaseModel):
     account_id: Optional[str] = None
     access_key_id: Optional[str] = None
@@ -82,11 +51,6 @@ class R2Config(BaseModel):
     public_base_url: Optional[str] = None
     image_prefix: Optional[str] = "images"
     upload_url_expire_seconds: Optional[int] = 900
-
-
-class LLMConfig(BaseModel):
-    provider: str           # "ollama" | "openai" | ...
-    model: str              # "llama3.2" 등
 
 class AppConfig(BaseModel):
     # 상위 항목 직접 정의
@@ -99,13 +63,8 @@ class AppConfig(BaseModel):
     access_token_expire_minutes: int
 
     # 구성 요소들
-    mongodb: Optional[MongoDBConfig] = None
     logger: LoggerConfig
     http_config: Optional[HTTPConfig] = None
-
-    rmq: Optional[RMQConfig] = None
-    redis: Optional[RedisConfig] = None
-    redis_consumer: Optional[RedisConsumerConfig] = None
     r2: Optional[R2Config] = None
     db: Optional[DBConfig] = None
 
@@ -113,20 +72,12 @@ class AppConfig(BaseModel):
     enable_monitoring: Optional[bool] = True
     monitoring_interval: Optional[int] = 10
 
-    # 서비스 관련
-    llm: Optional[LLMConfig] = None
-
-
 class AppContext:
     def __init__(self):
         self.cfg = {}
         self.log = None
         
         # 핸들러
-        self.ws_handler = None
-        self.redis_handler = None
-        self.redis_consumer = None
-        self.mongo_handler = None
         self.db_handler = None
 
         # 매니저
@@ -190,70 +141,11 @@ class AppContext:
         self.log = logger.setup_logger(log_level, log_path, log_max_files)
 
         self.log.debug("- end init logger")
-
-    def _init_websocket(self):
-        self.log.debug("+ start init websocket")
-
-        self.ws_handler = WebSocketHandler(self)
-
-        self.log.debug("- end init websocket")
-
-    def _init_rmq(self):
-        self.log.debug("+ start init RabbitMQ")
-
-        self.rmq_handler = RabbitMQHandler(self)
-
-        self.log.debug("- end init RabbitMQ")
-
-    def _init_redis(self):
-        self.log.debug("+ start init Redis")
-
-        self.redis_handler = RedisHandler(self)
-
-        self.log.debug("- end init Redis")
-        
-    def _init_redis_consumer(self):
-        self.log.debug("+ start init RedisStreamConsumer")
-
-        self.redis_consumer = RedisStreamConsumer(self)
-        
-        self.log.debug("- end init RedisStreamConsumer")
         
     def _init_db(self) -> None:
+        """호환성 유지용 래퍼"""
         self.log.debug("+ start init DB")
 
-        if not self.cfg.db:
-            self.log.debug("- skip init DB (no config)")
-            return
-
-        db_config = self.cfg.db.dict()
-        self.db_handler = DBHandler(db_config)
-        self.db_handler.init_connection()
-
-        from src.utils.db_init import init_db_if_needed
-        init_db_if_needed(self.db_handler, self.log)
+        self.db_handler = DBHandler(self)
 
         self.log.debug("- end init DB")
-        
-    # def _init_mongodb(self):
-    #     self.log.debug("+ start init MongoDB")
-        
-    #     if not self.cfg.mongodb:
-    #         self.log.debug("- skip init MongoDB (no config)")
-    #         return
-            
-    #     mongo_config = self.cfg.mongodb.dict()
-    #     self.mongo_handler = MongoDBHandler(mongo_config)
-    #     self.mongo_handler.init_connection()
-        
-    #     self.log.debug("- end init MongoDB")
-
-    def _init_system_manager(self):
-        self.log.debug("+ start init system manager")
-
-        if self.cfg.enable_monitoring:
-            interval = self.cfg.monitoring_interval
-            self.system_monitor = SystemMonitor(self.log, interval)
-            self.system_monitor.start()
-
-        self.log.debug("- end init system manager")
