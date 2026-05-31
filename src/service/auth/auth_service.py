@@ -1,4 +1,6 @@
 from datetime import datetime, timedelta
+import json as _json
+import time as _time
 from typing import Optional
 import jwt  # Using PyJWT or python-jose
 from fastapi import HTTPException
@@ -17,17 +19,18 @@ ALGORITHM = "HS256"
 def get_password_hash(password: str) -> str:
     return pwd_context.hash(password)
 
+
 def verify_password(plainPassword: str, hashedPassword: str) -> bool:
     if not hashedPassword:
         return False
     return pwd_context.verify(plainPassword, hashedPassword)
+
 
 def create_access_token(ctx: AppContext, data: dict, expiresDelta: Optional[timedelta] = None) -> str:
     toEncode = data.copy()
     if expiresDelta:
         expire = datetime.utcnow() + expiresDelta
     else:
-        # Default expiration from config
         expireMinutes = getattr(ctx.cfg, "access_token_expire_minutes", 60)
         expire = datetime.utcnow() + timedelta(minutes=expireMinutes)
     
@@ -38,8 +41,12 @@ def create_access_token(ctx: AppContext, data: dict, expiresDelta: Optional[time
 
 
 def get_user_by_email(ctx: AppContext, email: str, activeOnly: bool = True) -> Optional[dict]:
+    """
+    이메일로 사용자 정보 조회
+    - tb_user.fileId에 저장된 경로를 스키마의 filePath 필드로 깔끔하게 매핑합니다.
+    """
     sql = """
-        SELECT id, email, password, name, nickname, phone,
+        SELECT id, email, password, name, nickname, phone, 
                emailConf, `desc`, fileId, role, state, extra
         FROM tb_user
         WHERE email = %s
@@ -59,7 +66,6 @@ def get_user_by_email(ctx: AppContext, email: str, activeOnly: bool = True) -> O
     row = rows[0]
     extra = row[11] or {}
     if isinstance(extra, str):
-        import json as _json
         extra = _json.loads(extra)
 
     return {
@@ -71,108 +77,105 @@ def get_user_by_email(ctx: AppContext, email: str, activeOnly: bool = True) -> O
         "phone": row[5],
         "emailConf": row[6],
         "desc": row[7],
-        "fileId": row[8],
+        "filePath": row[8],  # 명세서 기준 컬럼인 fileId에 담긴 경로 문자열을 할당
         "role": row[9],
         "state": row[10],
         "extra": extra,
         "provider": extra.get("provider", "email"),
-        "providerId": extra.get("providerId"),
+        "providerId": extra.get("providerId")
     }
 
+def check_user_exists(ctx: AppContext, userId: int) -> bool:
+    sql = "SELECT COUNT(*) FROM tb_user WHERE id = %s"
+    rows = execute_query(ctx.db_handler, sql, (userId,))
+    if rows and rows[0][0] > 0:
+        return True
+    return False
 
-def create_user(ctx: AppContext, user: UserCreate) -> dict:
-    if ctx.db_handler is None:
-         # DB 연결이 없을 경우 에러 처리 혹은 Mocking
-        raise HTTPException(status_code=500, detail="Database not initialized")
 
-    existing = get_user_by_email(ctx, user.email, activeOnly=False)
-    if existing:
+def check_email_exists(ctx: AppContext, email: str) -> bool:
+    sql = "SELECT COUNT(*) FROM tb_user WHERE email = %s"
+    rows = execute_query(ctx.db_handler, sql, (email,))
+    if rows and rows[0][0] > 0:
+        return True
+    return False
+
+
+def authenticate_user(ctx: AppContext, email: str, password: str) -> Optional[dict]:
+    user = get_user_by_email(ctx, email, activeOnly=True)
+    if not user:
+        return None
+    if not verify_password(password, user["password"]):
+        return None
+    return user
+
+
+def create_user(ctx: AppContext, userDto: UserCreate) -> dict:
+    if check_email_exists(ctx, userDto.email):
         raise HTTPException(status_code=400, detail="Email already registered")
+
+    hashedPassword = get_password_hash(userDto.password) if userDto.password else None
     
-    hashedPassword = get_password_hash(user.password) if user.password else None
-
-    role = UserRole.CLIENT
-
-    # provider/providerId는 extra JSON에 저장
-    import json as _json
-    import time as _time
-    extra = dict(user.extra) if user.extra else {}
-    if user.provider and user.provider != "email":
-        extra["provider"] = user.provider
-    if user.providerId:
-        extra["providerId"] = user.providerId
+    extraData = userDto.extra or {}
+    extraData["provider"] = userDto.provider
+    if userDto.providerId:
+        extraData["providerId"] = userDto.providerId
 
     now = int(_time.time())
 
     sql = """
-        INSERT INTO tb_user (
-            name, nickname, email, password, phone,
-            emailConf, `desc`, fileId, role, state, extra, cDate, uDate
-        ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+        INSERT INTO tb_user 
+        (email, password, name, nickname, phone, emailConf, `desc`, fileId, role, state, extra, cDate, uDate)
+        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
     """
     params = (
-        user.name, user.nickname, user.email, hashedPassword,
-        user.phone, user.emailConf, user.desc, user.fileId,
-        role.value, UserState.ACTIVE.value, _json.dumps(extra, ensure_ascii=False), now, now
+        userDto.email,
+        hashedPassword,
+        userDto.name,
+        userDto.nickname,
+        userDto.phone,
+        userDto.emailConf,
+        userDto.desc,
+        userDto.filePath,  # fileId 컬럼 자리에 경로 문자열 직접 타겟팅
+        UserRole.CLIENT.value,
+        UserState.ACTIVE.value,
+        _json.dumps(extraData, ensure_ascii=False),
+        now,
+        now
     )
 
     conn = ctx.db_handler.get_connection()
-    new_id: int | None = None
     try:
         with conn.cursor() as cursor:
             cursor.execute(sql, params)
-            new_id = cursor.lastrowid
+            newId = cursor.lastrowid
             conn.commit()
     except Exception as e:
         conn.rollback()
-        ctx.log.error(f"Failed to create user: {e}")
-        raise HTTPException(status_code=500, detail="Failed to create user")
+        raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
 
     return {
-        "id": new_id,
-        "email": user.email,
-        "name": user.name,
-        "nickname": user.nickname,
-        "role": role.value,
+        "id": newId,
+        "email": userDto.email,
+        "name": userDto.name,
+        "nickname": userDto.nickname,
+        "phone": userDto.phone,
+        "emailConf": userDto.emailConf,
+        "desc": userDto.desc,
+        "filePath": userDto.filePath,
+        "role": UserRole.CLIENT.value,
         "state": UserState.ACTIVE.value,
-        "provider": user.provider,
+        "extra": extraData,
+        "provider": userDto.provider,
+        "providerId": userDto.providerId
     }
 
-
-def authenticate_user(ctx: AppContext, email: str, password: str):
-    user = get_user_by_email(ctx, email)
-    if not user:
-        return False
-    if not verify_password(password, user["password"]):
-        return False
-    return user
-
-
-def check_user_exists(ctx: AppContext, userId: int) -> bool:
-    sql = "SELECT id FROM tb_user WHERE id = %s AND state = %s"
-    if not ctx.db_handler:
-        return False
-    rows = execute_query(ctx.db_handler, sql, (userId, UserState.ACTIVE.value))
-    return bool(rows)
-
-
-def check_email_exists(ctx: AppContext, email: str) -> bool:
-    sql = "SELECT id FROM tb_user WHERE email = %s AND state = %s"
-    if not ctx.db_handler:
-        return False
-    rows = execute_query(ctx.db_handler, sql, (email, UserState.ACTIVE.value))
-    return bool(rows)
-
-def update_user(ctx: AppContext, userId: int, data: dict) -> dict:
-    import json as _json
-    import time as _time
-    if ctx.db_handler is None:
-        raise HTTPException(status_code=500, detail="Database not initialized")
-
-    # 비밀번호 변경 처리
+def update_user(ctx: AppContext, userId: int, data: dict) -> bool:
+    """
+    사용자 정보 수정
+    - 클라이언트가 filePath 키로 전달한 이미지 경로를 유저 테이블의 fileId 컬럼에 직접 동기화합니다.
+    """
     if data.get("passwordNew"):
-        if data.get("passwordNew") != data.get("passwordNewCheck"):
-            raise HTTPException(status_code=400, detail="New password mismatch")
         sql = "SELECT id, email, password FROM tb_user WHERE id = %s"
         rows = execute_query(ctx.db_handler, sql, (userId,))
         if not rows:
@@ -183,11 +186,19 @@ def update_user(ctx: AppContext, userId: int, data: dict) -> dict:
 
     fields = []
     params = []
-    for key in ["name", "nickname", "phone", "desc", "fileId", "password"]:
+    
+    # 기본 입력 데이터 매핑
+    for key in ["name", "nickname", "phone", "desc", "password"]:
         if data.get(key) is not None:
             colName = "`desc`" if key == "desc" else key
             fields.append(f"{colName} = %s")
             params.append(data[key])
+            
+    # filePath 가 수정 키셋에 포함되어 있다면, 유저 테이블의 fileId 컬럼에 곧바로 매핑 적재
+    if "filePath" in data:
+        fields.append("fileId = %s")
+        params.append(data["filePath"])
+
     if data.get("extra") is not None:
         fields.append("extra = %s")
         params.append(_json.dumps(data["extra"], ensure_ascii=False))
@@ -206,9 +217,7 @@ def update_user(ctx: AppContext, userId: int, data: dict) -> dict:
         with conn.cursor() as cursor:
             cursor.execute(sql, params)
             conn.commit()
+        return True
     except Exception as e:
         conn.rollback()
-        ctx.log.error(f"Failed to update user: {e}")
-        raise HTTPException(status_code=500, detail="Failed to update user")
-
-    return {"id": userId, "updated": True}
+        raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")

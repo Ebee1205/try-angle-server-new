@@ -22,7 +22,7 @@ class UserBase(BaseModel):
     phone: Optional[str] = Field(None, description="핸드폰번호")
     emailConf: str = Field("2", description="메일 주소 확인 여부 1: yes 2: no")
     desc: Optional[str] = Field(None, description="설명")
-    fileId: Optional[str] = Field(None, description="프로필 파일 아이디")
+    filePath: Optional[str] = Field(None, description="프로필 파일 아이디")
     extra: Dict[str, Any] = Field(default_factory=dict, description="부가정보")
 
     # 간편 로그인(Social Login) 확장을 위한 필드
@@ -48,7 +48,7 @@ class UserUpdate(BaseModel):
     nickname: Optional[str] = None
     phone: Optional[str] = None
     desc: Optional[str] = None
-    fileId: Optional[str] = None
+    filePath: Optional[str] = None
     extra: Optional[Dict[str, Any]] = None
 
 
@@ -112,7 +112,7 @@ class UserUpdateRequest(BaseModel):
     nickname: Optional[str] = None
     phone: Optional[str] = None
     desc: Optional[str] = None
-    fileId: Optional[str] = None
+    filePath: Optional[str] = None
     extra: Optional[Dict[str, Any]] = None
     password: Optional[str] = None
     passwordNew: Optional[str] = None

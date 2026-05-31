@@ -26,6 +26,7 @@ async def signup(request: Request, user: UserCreate):
     newUser = auth_service.create_user(ctx, user)
     return build_response_body(ResponseStatus.CREATED, newUser)
 
+
 @router.post("/login")
 async def login(request: Request, loginReq: UserLogin):
     """
@@ -44,36 +45,17 @@ async def login(request: Request, loginReq: UserLogin):
         ctx, 
         data={"sub": user["email"], "role": user["role"]}
     )
-    safe_user = dict(user)
-    safe_user.pop("password", None)
-    return build_success_response(safe_user)
-
-@router.post("/token")
-async def loginForm(request: Request, formData: OAuth2PasswordRequestForm = Depends()):
-    """
-    Swagger UI용 로그인 API (Form Data)
-    """
-    ctx = request.app.state.ctx
-    user = auth_service.authenticate_user(ctx, formData.username, formData.password)
-    if not user:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Incorrect email or password",
-            headers={"WWW-Authenticate": "Bearer"},
-        )
-    
-    accessToken = auth_service.create_access_token(
-        ctx, 
-        data={"sub": user["email"], "role": user["role"]}
-    )
     return build_success_response({"accessToken": accessToken, "tokenType": "bearer"})
+
 
 @router.get("/me")
 async def readUsersMe(request: Request, user=Depends(require_user)):
     """
-    현재 사용자 정보 조회 (JWT 인증)
+    현재 사용자 정보 조회 (JWT 인증) -> DB tb_user.fileId 문자열이 그대로 데이터 레이어의 filePath로 내려갑니다.
     """
-    return build_success_response(user)
+    safe_user = dict(user)
+    safe_user.pop("password", None)
+    return build_success_response(safe_user)
 
 
 @router.post("/exists")
@@ -89,7 +71,7 @@ async def checkExists(request: Request, body: UserExistsRequest):
 @router.post("/checkEmail")
 async def checkEmail(request: Request, body: CheckEmailRequest):
     """
-    이메일 유효성 및 중복 체크
+    이메일 중복 체크
     """
     ctx = request.app.state.ctx
     exists = auth_service.check_email_exists(ctx, body.email)
@@ -99,7 +81,7 @@ async def checkEmail(request: Request, body: CheckEmailRequest):
 @router.post("/logout")
 async def logout(user=Depends(require_user)):
     """
-    로그아웃 (JWT는 stateless이므로 클라이언트에서 토큰 삭제)
+    로그아웃
     """
     return build_success_response({"message": "Logged out successfully"})
 
@@ -107,8 +89,16 @@ async def logout(user=Depends(require_user)):
 @router.post("/update")
 async def updateUser(request: Request, body: UserUpdateRequest, user=Depends(require_user)):
     """
-    내 정보 수정 (JWT 인증)
+    내 정보 수정 (JWT 인증) -> 스키마 구조(body.fileId)를 유지한 채 서비스에 바인딩
     """
     ctx = request.app.state.ctx
-    result = auth_service.update_user(ctx, user["id"], body.model_dump(exclude_none=True))
-    return build_success_response(result)
+    userId = user["id"]
+    
+    # 클라이언트가 실제로 전송한 필드만 추출 (여기서 fileId에 파일 경로 문자열이 담겨 있습니다)
+    update_data = body.model_dump(exclude_unset=True)
+    
+    success = auth_service.update_user(ctx, userId, update_data)
+    if success:
+        return build_success_response({"message": "User updated successfully"})
+    else:
+        raise HTTPException(status_code=400, detail="User update failed")
