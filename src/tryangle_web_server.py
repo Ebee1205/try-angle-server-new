@@ -22,8 +22,7 @@ from src.service.basic.basic_api import router as basic_router
 from src.service.reference.reference_api import router as reference_router
 from src.service.files.files_api import router as files_router
 from src.service.auth.auth_api import router as auth_router
-from src.service.logging.logging_api import router as logging_router
-from src.service.tag.tag_api import router as tag_router
+from src.service.system.system_api import router as system_router
 from src.service.ctg.ctg_api import router as ctg_router
 from src.service.prod.prod_api import router as prod_router
 from src.service.session.session_api import router as session_router
@@ -72,13 +71,9 @@ class AppFactory:
         
         # 설정 로드
         ctx.load_config("src/service/conf/tryangle_web_server.local.cfg.json")
-        ctx.load_token("src/service/conf/tryangel_cloudflare_token.json")
 
         # CORS 설정
         AppFactory._setup_cors(app, ctx)
-
-        # 예외 핸들러 등록
-        AppFactory._register_exception_handlers(app)
         
         # 라우터 등록
         AppFactory._register_routes(app)
@@ -99,43 +94,6 @@ class AppFactory:
         print(f"CORS configuration complete: {cors_config.allow_origins}")
 
     @staticmethod
-    def _register_exception_handlers(app: FastAPI) -> None:
-        """FastAPI 공식 가이드 기반 전역 예외 핸들러 등록"""
-
-        @app.exception_handler(StarletteHTTPException)
-        async def http_exception_handler(request: Request, exc: StarletteHTTPException):
-            # 401, 404 등 HTTP 기반 예외 발생 시 호출됨
-            return JSONResponse(
-                status_code=exc.status_code,
-                content=build_error_response(exc.status_code),
-            )
-
-        @app.exception_handler(RequestValidationError)
-        async def validation_exception_handler(request: Request, exc: RequestValidationError):
-            ctx = getattr(request.app.state, "ctx", None)
-            if ctx and getattr(ctx, "log", None):
-                ctx.log.warning(f"Request validation failed: {exc.errors()}")
-
-            # 유효성 검사 실패는 보통 400 Bad Request로 처리
-            # 필요 시 exc.errors()를 data 인자로 넘겨 상세 에러를 포함할 수 있음
-            return JSONResponse(
-                status_code=400,
-                content=build_error_response(400, data={"detail": exc.errors()}),
-            )
-
-        @app.exception_handler(Exception)
-        async def unhandled_exception_handler(request: Request, exc: Exception):
-            ctx = getattr(request.app.state, "ctx", None)
-            if ctx and getattr(ctx, "log", None):
-                ctx.log.error(f"Unhandled exception: {str(exc)}")
-
-            # 예상치 못한 모든 서버 에러는 500 처리
-            return JSONResponse(
-                status_code=500,
-                content=build_error_response(500),
-            )
-    
-    @staticmethod
     def _register_routes(app: FastAPI) -> None:
         """라우터 등록"""
         routers = [
@@ -143,8 +101,7 @@ class AppFactory:
             reference_router,
             files_router,
             auth_router,
-            logging_router,
-            tag_router,
+            system_router,
             ctg_router,
             prod_router,
             session_router,
@@ -163,7 +120,6 @@ class AppFactory:
             # 초기화 후 연결 설정
             await AppFactory._initialize_managers(ctx)
             await AppFactory._initialize_handlers(ctx)
-            await AppFactory._setup_connections(ctx)
             
             ctx.log.info("     == Initialization complete")
 
@@ -188,27 +144,7 @@ class AppFactory:
     async def _initialize_handlers(ctx: AppContext) -> None:
         """핸들러 초기화"""    
         ctx.log.info("     - Initializing handlers...")
-        ctx._init_db()  # 테이블 미존재 시 자동으로 스키마·시드 초기화 실행
-        # ctx._init_mongodb()
-        ctx._init_websocket()
-        ctx._init_rmq()
-
-        # ctx._init_redis()
-        # ctx._init_redis_consumer()
-
-    @staticmethod
-    async def _setup_connections(ctx: AppContext) -> None:
-        """외부 서비스 연결 설정"""
-        # RabbitMQ 연결
-        await ctx.rmq_handler.connect()
-        await ctx.rmq_handler.consume_multi()
-
-        # # Redis 연결
-        # await ctx.redis_handler.connect()
-        # await ctx.redis_consumer.init_group()
-        
-        # ctx.redis_consumer_task = asyncio.create_task(ctx.redis_consumer.consume())
-        # await asyncio.sleep(0)  # 태스크가 시작되도록 제어권 양보   
+        ctx._init_db() 
 
     
     @staticmethod
@@ -218,62 +154,6 @@ class AppFactory:
 
         if hasattr(ctx, 'log') and ctx.log:
             ctx.log.info("     -- Shutting down application")
-
-        # # Redis 종료
-        # if hasattr(ctx, "redis_consumer") and ctx.redis_consumer:
-        #     try:
-        #         await ctx.redis_consumer.stop()
-        #         ctx.log.info("     -- RedisStreamConsumer stopped")
-        #     except Exception as e:
-        #         ctx.log.warning(f"     - RedisStreamConsumer stop failed: {e}")
-        # if ctx.redis_handler:
-        #     try:
-        #         await ctx.redis_handler.disconnect()
-        #         ctx.log.info("     -- Redis handler closed")
-        #     except Exception as e:
-        #         ctx.log.warning(f"     - Redis close failed: {e}")
-
-        # WebSocket 종료
-        if ctx.ws_handler:
-            try:
-                await ctx.ws_handler.disconnect_all()
-                ctx.log.info("     -- WebSocket handler closed")
-            except Exception as e:
-                ctx.log.warning(f"     - WebSocket close failed: {e}")
-        
-        # RabbitMQ 종료
-        if ctx.rmq_handler:
-            try:
-                await ctx.rmq_handler.disconnect()
-                ctx.log.info("     -- RabbitMQ handler closed")
-            except Exception as e:
-                ctx.log.warning(f"     - RabbitMQ close failed: {e}")
-        
-        # MongoDB 종료
-        if ctx.mongo_handler:
-            try:
-                ctx.mongo_handler.close_connection()
-                ctx.log.info("     -- MongoDB handler closed")
-            except Exception as e:
-                ctx.log.warning(f"     - MongoDB close failed: {e}")
-        
-        # 모니터링 종료
-        if ctx.system_monitor:
-            try:
-                ctx.system_monitor.stop()
-                ctx.log.info("     -- system monitor stopped")
-            except Exception as e:
-                ctx.log.warning(f"     - system monitor stop failed: {e}")
-
-    @staticmethod
-    def _test_logging(logger) -> None:
-        """로깅 테스트"""
-        logger.info("===FILE LOG TEST START===")
-        logger.debug("   -test debug level")
-        logger.info("   -test info level")
-        logger.warning("   -test warn level")
-        logger.error("   -test error level")
-        logger.info("===FILE LOG TEST END===")
 
 # 애플리케이션 인스턴스 생성
 app = AppFactory.create_app()
