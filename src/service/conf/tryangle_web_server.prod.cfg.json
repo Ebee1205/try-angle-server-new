@@ -33,7 +33,7 @@
     },
 
     "logger": {
-        "level": "debug",
+        "level": "info",
         "path": "./logs/tryangle_web_server.log-%DATE%",
         "suffix": "%Y-%m-%d",
         "max_bytes": 10485760,
