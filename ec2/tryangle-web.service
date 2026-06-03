@@ -1,0 +1,15 @@
+[Unit]
+Description=TryAngle Web API Server
+After=network.target
+
+[Service]
+Type=simple
+User=ubuntu
+WorkingDirectory=/opt/try-angle-sever
+EnvironmentFile=/etc/tryangle/tryangle.env
+ExecStart=/bin/bash -lc '${VENV_PATH}/bin/python -m src.tryangle_web_server'
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
