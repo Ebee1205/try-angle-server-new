@@ -11,7 +11,7 @@ from src.service.basic import basic_service
 # GET /ping
 router = APIRouter(tags=["Basic"])
 
-@router.get("/ping")
+@router.get("/api/health")
 async def ping(request: Request):
     ctx = request.app.state.ctx
     return basic_service.ping(ctx)
