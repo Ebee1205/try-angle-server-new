@@ -2,7 +2,7 @@
   "info": {
     "_postman_id": "try-angle-server-collection",
     "name": "Try-Angle Server API",
-    "description": "Try-Angle 서버 API 테스트 컬렉션",
+    "description": "Try-Angle 서버 API 테스트 컬렉션 (실제 구현 기준)",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "variable": [
@@ -107,48 +107,7 @@
             "description": "로그인 API (JSON Body) - JWT access_token을 컬렉션 변수에 자동 저장"
           }
         },
-        {
-          "name": "Login (Form / Swagger UI)",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "exec": [
-                  "var json = pm.response.json();",
-                  "if (json.accessToken) {",
-                  "    pm.collectionVariables.set('accessToken', json.accessToken);",
-                  "}"
-                ],
-                "type": "text/javascript"
-              }
-            }
-          ],
-          "request": {
-            "method": "POST",
-            "header": [],
-            "body": {
-              "mode": "urlencoded",
-              "urlencoded": [
-                {
-                  "key": "username",
-                  "value": "admin@email.com",
-                  "type": "text"
-                },
-                {
-                  "key": "password",
-                  "value": "admin",
-                  "type": "text"
-                }
-              ]
-            },
-            "url": {
-              "raw": "{{baseUrl}}/api/auth/token",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "auth", "token"]
-            },
-            "description": "로그인 API (Form Data) - JWT access_token을 컬렉션 변수에 자동 저장"
-          }
-        },
+
         {
           "name": "Get Me",
           "request": {
