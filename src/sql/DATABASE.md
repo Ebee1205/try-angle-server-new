@@ -11,8 +11,11 @@
     * 매핑 테이블: `mtb_{name}`
     * 생성일/수정일: `cDate` / `uDate`
 * **Role Enum:** `SUPER_ADMIN`, `ADMIN`, `CLIENT`
-* **Primary Key Strategy:** 기본 PK 전략은 `BIGINT AUTO_INCREMENT`입니다. 단, `tb_session.id`는 외부 로그 매핑 키로 사용되므로 예외적으로 src.core.id_generator.generate_sid로 수동 할당 PK를 사용합니다.
+* **Primary Key Strategy:** 기본 PK 전략은 `BIGINT AUTO_INCREMENT`입니다. 단, `tb_session.id`는 외부 로그 매핑 키로 사용되므로 예외적으로 `VARCHAR(32)` 문자열 형식으로 `src.core.id_generator.generate_sid()`를 통해 수동 할당됩니다.
 * **Status Code Convention:** 상태값은 문자열 enum 대신 정수 코드(`int`)를 사용합니다.
+* **FK 삭제 정책:** 
+  - `tb_session` 삭제 시: `tb_snap.sId`는 `SET NULL` (스냅 데이터는 보존)
+  - `tb_user`, `tb_img`, `tb_prod` 삭제 시: `RESTRICT` 정책 (참조 관계가 있으면 삭제 불가)
 
 ---
 
@@ -106,17 +109,17 @@
 
 | 컬럼명 | 타입 | 제약사항 | 설명 |
 | :--- | :--- | :--- | :--- |
- **id** | bigint | PK | 세션 고유 식별자 (외부 로그 매핑용 수동 할당 PK) |
+| **id** | varchar(32) | PK | 세션 고유 식별자 (외부 로그 매핑용 수동 할당 PK, `generate_sid()`) |
 | **userId** | bigint | FK (`tb_user.id`) | 세션 사용자 ID |
 | **imgId** | bigint | FK (`tb_img.id`) | 참조한 레퍼런스 이미지 ID |
-| **sDate** | bigint | - | 시작 시간 (Unix Timestamp) |
-| **eDate** | bigint | - | 종료 시간 (Unix Timestamp) |
+| **sDate** | bigint | Not Null | 시작 시간 (Unix Timestamp) |
+| **eDate** | bigint | - | 종료 시간 (Unix Timestamp, NULL일 때 진행 중) |
 | **device** | json | - | 모델명, OS, 성능 정보 등 디바이스 메타데이터 |
 | **sStat** | int | Default: 0 | 세션 상태 (`0: READY`, `1: COMPLETED`, `2: FAILED`) |
-| **cDate** | bigint | - | 생성일 (Unix Timestamp) |
-| **uDate** | bigint | - | 수정일 (Unix Timestamp) |
+| **cDate** | bigint | Not Null | 생성일 (Unix Timestamp) |
+| **uDate** | bigint | Not Null | 수정일 (Unix Timestamp) |
 
-> `tb_session.id`는 Non-SQL 시스템 로그 데이터와 매핑되는 연결 키로 사용됩니다.
+> `tb_session.id`는 Non-SQL 시스템 로그 데이터와 매핑되는 연결 키로 사용되며, `src.core.id_generator.generate_sid()`로 수동 생성됩니다.
 
 ### 2.8 상품 정보 (`tb_prod`)
 스냅과 연결되는 상품 메타데이터를 관리합니다.
@@ -142,15 +145,15 @@
 | **userId** | bigint | FK (`tb_user.id`) | 촬영 유저 ID |
 | **prodId** | bigint | FK (`tb_prod.id`) | 연결된 상품 ID |
 | **imgId** | bigint | FK (`tb_img.id`) | 참조한 레퍼런스 이미지 ID |
-| **sId** | bigint | FK (`tb_session.id`) | 연결된 촬영 세션 ID |
+| **sId** | varchar(32) | FK (`tb_session.id`), Nullable | 연결된 촬영 세션 ID (SET NULL 정책) |
 | **snapUrl** | varchar | Not Null | 촬영된 이미지 경로 |
 | **comment** | text | - | 후기 내용 |
 | **gender** | int | Default: 0 | 성별 (`0: UNKNOWN`, `1: MALE`, `2: FEMALE`) |
 | **userH** | float | - | 촬영 시 입력한 키 |
 | **userW** | float | - | 촬영 시 입력한 몸무게 |
 | **viewCnt** | int | Default: 0 | 조회수 |
-| **cDate** | bigint | - | 생성일 (Unix Timestamp) |
-| **uDate** | bigint | - | 수정일 (Unix Timestamp) |
+| **cDate** | bigint | Not Null | 생성일 (Unix Timestamp) |
+| **uDate** | bigint | Not Null | 수정일 (Unix Timestamp) |
 
 ---
 
@@ -175,13 +178,37 @@
 
 ## 4. 특이사항 및 구현 가이드
 
-1. **noneSQL DB 연동:** `tb_img.aiDocId`는 레퍼런스 이미지 분석/가이드 문서와 연결되고, `tb_session.id`는 시스템 로그 컬렉션과 매핑됩니다.
-2. **저장소 분리:** 원본 및 결과 이미지 파일은 Cloudflare R2에 저장하고, RDBMS에는 경로와 메타데이터만 저장하는 구성을 전제로 합니다.
+1. **noneSQL DB 연동:** 
+   - `tb_img.aiDoc`는 레퍼런스 이미지 분석/가이드 문서와 연결되는 JSON 데이터입니다.
+   - `tb_session.id`는 시스템 로그 컬렉션과 매핑되며, 외부 로그 시스템에서 참조됩니다.
+
+2. **저장소 분리:** 원본 및 결과 이미지 파일은 Cloudflare R2에 저장하고, RDBMS에는 경로와 메타데이터만 저장합니다.
+
 3. **계정 상태 관리:** `tb_user.state`로 계정 활성/비활성 여부를 관리하며, 물리 삭제 정책은 별도로 운영합니다.
-4. **상태값 관리:** `tb_user.state`, `tb_session.sStat`, `tb_prod.pStat`, `tb_snap.gender`는 정수 코드 기반으로 관리합니다.
-5. **데이터 무결성:** `tb_user`, `tb_img`, `tb_prod`, `tb_session` 삭제 시 `mtb_bookmark`, `mtb_img_tag`, `tb_snap`에 대한 Cascade 또는 비활성화 정책을 별도로 결정해야 합니다.
-6. **성능 최적화:** `tb_user.state`, `tb_img`의 `useCnt`, `expWeight`, `pri`, `tb_prod`의 `pStat`, `tb_snap`의 `viewCnt`, `tb_session`의 `sStat`, `sDate`는 조회 패턴에 따라 보조 인덱스 검토가 필요합니다.
-7. **전환 주의사항:** 현재 애플리케이션 API/서비스 레이어는 일부 문자열 ID 생성 로직과 기존 상태값 표현을 사용 중일 수 있으므로, 스키마 변경과 함께 서비스 레이어 호환성을 점검해야 합니다.
+
+4. **상태값 관리:** 
+   - `tb_user.state`: `0` (INACTIVE), `1` (ACTIVE)
+   - `tb_session.sStat`: `0` (READY), `1` (COMPLETED), `2` (FAILED)
+   - `tb_prod.pStat`: `0` (INACTIVE), `1` (ACTIVE), `2` (SOLD_OUT)
+   - `tb_snap.gender`: `0` (UNKNOWN), `1` (MALE), `2` (FEMALE)
+
+5. **데이터 무결성 및 삭제 정책:**
+   - `tb_user` 삭제 시: `tb_img`, `tb_tag`, `tb_prod`, `tb_snap`은 RESTRICT (사용자가 참조되면 삭제 불가)
+   - `tb_img` 삭제 시: `tb_snap`, `mtb_bookmark`, `mtb_img_tag`는 CASCADE (이미지 삭제 시 관련 데이터 삭제)
+   - `tb_session` 삭제 시: `tb_snap.sId`는 SET NULL (세션 삭제되어도 스냅 데이터는 유지)
+   - `tb_prod` 삭제 시: `tb_snap`은 RESTRICT (상품 참조 스냅이 있으면 삭제 불가)
+
+6. **성능 최적화:** 다음 컬럼들은 조회 패턴에 따라 인덱스가 적용되어 있습니다:
+   - `tb_user`: `state` 인덱스
+   - `tb_img`: `(useCnt, expWeight, pri)` 복합 인덱스
+   - `tb_session`: `(sStat, sDate)` 복합 인덱스
+   - `tb_prod`: `pStat` 인덱스
+   - `tb_snap`: `viewCnt` 인덱스, `(userId, prodId, imgId)` FK 인덱스
+   - `mtb_bookmark`: `(userId, imgId)` Unique 인덱스
+
+7. **API와 DB 관계:**
+   - `tb_tag`, `mtb_img_tag`, `mtb_bookmark` 테이블은 데이터베이스 스키마에 포함되어 있으나, 현재 활성 API 엔드포인트에서는 제공되지 않습니다.
+   - 향후 기능 확장 시 해당 테이블을 활용할 수 있습니다.
 
 
 ## 5. Cloudflare R2 폴더 구조 정의서 (tryangle-images)
