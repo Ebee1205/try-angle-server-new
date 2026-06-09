@@ -22,7 +22,6 @@ from src.service.basic.basic_api import router as basic_router
 from src.service.reference.reference_api import router as reference_router
 from src.service.files.files_api import router as files_router
 from src.service.auth.auth_api import router as auth_router
-from src.service.system.system_api import router as system_router
 from src.service.ctg.ctg_api import router as ctg_router
 from src.service.prod.prod_api import router as prod_router
 from src.service.session.session_api import router as session_router
@@ -101,7 +100,6 @@ class AppFactory:
             reference_router,
             files_router,
             auth_router,
-            system_router,
             ctg_router,
             prod_router,
             session_router,
