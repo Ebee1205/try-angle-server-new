@@ -5,11 +5,16 @@ After=network.target
 [Service]
 Type=simple
 User=ubuntu
-WorkingDirectory=/opt/try-angle-sever
+WorkingDirectory=/opt/try-angle-server
 EnvironmentFile=/etc/tryangle/tryangle.env
 ExecStart=/bin/bash -lc '${VENV_PATH}/bin/python -m src.tryangle_web_server'
 Restart=always
 RestartSec=5
+
+# 로깅 설정 (stdout/stderr → 파일)
+StandardOutput=append:/var/log/tryangle-web-api.log
+StandardError=append:/var/log/tryangle-web-api.log
+SyslogIdentifier=tryangle-web
 
 [Install]
 WantedBy=multi-user.target
