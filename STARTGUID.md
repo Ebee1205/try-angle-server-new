@@ -17,6 +17,9 @@
 ## 참고 문서
 
 - 배포 방법: `ec2/tryangle-web.service`
-- API 명세: `src/service/API.md`
+- API 명세: `src/service/API.md`, `try-angle-server.postman_collection.json`
 - database: `src/sql/DATABASE.md`
 
+## 규격
+
+- 카카오톡으로 전달받은 csv(엑셀)파일이 최신, API명세는 md와 postman파일로 대체
