@@ -19,6 +19,7 @@
 - 배포 방법: `ec2/tryangle-web.service`
 - API 명세: `src/service/API.md`, `try-angle-server.postman_collection.json`
 - database: `src/sql/DATABASE.md`
+- sample(레거시): `sample` - gate별 데이터 전달 전 사용하던 목업 파일
 
 ## 규격
 
